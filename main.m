@@ -28,7 +28,7 @@ rng(seed);
 
 % load data
 datatable = readtable('data.xlsx', ReadVariableNames=true);  
-names = datatable.Properties.VariableNames;
+names = datatable.Properties.VariableNames(2:end);
 dates = table2array(datatable(:,1));
 data = table2array(datatable(:,2:end));
 
@@ -48,10 +48,18 @@ data = table2array(datatable(:,2:end));
 % 13 INT ->	Short-term interest rate & shadow rate - Financial - Hard/Soft - M
 % 14 EPU ->	Economic policy uncertainty - Other - Soft - M
 % 15 SBI -> Supply-bottleneck - Other - Soft - M
+% Note: always put quarterly variables first
 
-select = [1 2 3 4 5 7];  % select specific variables
+%select = [1 2 3 4 5 7];  % select specific variables
+select = 1:size(data,2);
+
 T = length(dates);
 N = length(select);
+
+Q = 1;  % number of quarterly variables
+M = N-Q;  % number of monthly variables
+
+y = data(:,select);  % observables
 
 
 %% preprocess data
