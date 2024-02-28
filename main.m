@@ -16,6 +16,7 @@ close all
 tmp = matlab.desktop.editor.getActive;  
 cwd = fileparts(tmp.Filename);
 cd(cwd);  
+addpath('functions')
 addpath('functions_dfm')
 addpath('functions_var')
 
@@ -59,11 +60,11 @@ N = length(select);
 Q = 1;  % number of quarterly variables
 M = N-Q;  % number of monthly variables
 
-y = data(:,select);  % observables
+yraw = data(:,select);  % observables
 
 
 %% preprocess data
-run('preprocess')
+y = preprocess(yraw,dates,names,T,N,Q,M);
 
 
 %% run models

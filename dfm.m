@@ -1,16 +1,7 @@
 %% MF Bayesian DFM with unbalanced data
 
-%% housekeepiing
-clc 
-clear all
-close all
+% specs
 seed=0;  rng(seed);   % fix the seed if desired
-
-
-%% data
-data = xlsread('rawdata2.xls',1,'r3:v860');     
-y = data;  % includes Q and M variables -> mixed frequency
-[T,N] = size(y);  % sample size and number of variables
 idx = 1-isnan(y);  % matrix to select filled values
 
 % transformations
@@ -21,8 +12,6 @@ yy_sd = nanstd(y)';  % avoid nan when computing stats
 Y = Yb';
 
 % model specs
-M  = 4;  % number of monthly variables
-Q  = 1;  % number of quarterly variables 
 AR = 2;  % number of lags for each component
 S =  N + N*Q + AR*M;   % number of states
 m2q = [(1/3);(2/3);1;(2/3);(1/3)];  % month-to-quarter conversion
