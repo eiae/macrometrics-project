@@ -8,10 +8,10 @@ function [Zdraw,yfilled] = drawLatent(vars,T,S,N,phi1,phi2,sig2fact,lam,psi,sig2
 
 % specs
 data = vars';  % data
-params = [lam; phi1; phi2; psi; sig2];  % stack params
+params = [lam; phi1; phi2; psi; sig2; sig2fact];  % stack params (follow this order!)
 
 % build state-space param matrices
-[RR,QQ,H,F] = stateSpaceMat(params, sig2fact, m2q, N); 
+[RR,QQ,H,F] = stateSpaceMat(params, m2q, N, Q, M, S, L, AR); 
 
 % preallocate
 Zp = zeros(S,1);      

@@ -1,5 +1,11 @@
 %% MF Bayesian DFM with unbalanced data
 
+%% To be deleted
+data = xlsread('rawdata2.xls',1,'r3:v860');     
+y = data;  % includes Q and M variables -> mixed frequency
+[T,N] = size(y);  % sample size and number of variables
+%%
+
 % specs
 seed=0;  rng(seed);   % fix the seed if desired
 idx = 1-isnan(y);  % matrix to select filled values
@@ -43,6 +49,7 @@ D0 = 0.1*(V0-1);
 N1 = 800;  % draws to keep 
 N0 = 200;  % burn-in
 Totiter = N0 + N1; 
+
 
 % starting values
 % for autoregressive coeff in common component (phi1, phi2)
