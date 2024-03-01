@@ -61,6 +61,7 @@ Q = 1;  % number of quarterly variables
 M = N-Q;  % number of monthly variables
 
 yraw = data(:,select);  % observables
+idx = 1-isnan(yraw);  % indicator to select filled values
 
 
 %% preprocess data

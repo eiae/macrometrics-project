@@ -1,4 +1,4 @@
-function [B1,B2] = drawCoeffCommon(ztt,Sigma0,B0, lag)
+function [B] = drawCoeffCommon(ztt,Sigma0,B0, lag)
 %% Generate draw of autoregressive coeff in common component
 % Input:
 % - sample of states
@@ -29,8 +29,6 @@ while chck<0  % check for stability
         chck = 1;
     end
 end
-B1 = B(1,:);
-B2 = B(2,:);
 
 end
 

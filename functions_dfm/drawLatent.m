@@ -1,4 +1,4 @@
-function [Zdraw,yfilled] = drawLatent(vars,T,S,N,phi1,phi2,sig2fact,lam,psi,sig2,index,Q,M,AR,m2q,L)
+function [latentDraw,yfilled] = drawLatent(vars,T,S,N,phi,sig2fact,lam,psi,sig2,index,Q,M,AR,m2q,L)
 %% Construct Kalman filter and Kalman smoother (KC algorithm)
 % Input:
 % - model params 
@@ -8,16 +8,16 @@ function [Zdraw,yfilled] = drawLatent(vars,T,S,N,phi1,phi2,sig2fact,lam,psi,sig2
 
 % specs
 data = vars';  % data
-params = [lam; phi1; phi2; psi; sig2; sig2fact];  % stack params (follow this order!)
+params = [lam; phi; psi; sig2; sig2fact];  % stack params (follow this order!)
 
 % build state-space param matrices
 [RR,QQ,H,F] = stateSpaceMat(params, m2q, N, Q, M, S, L, AR); 
 
 % preallocate
-Zp = zeros(S,1);      
-Pp = eye(S);
-Z = zeros(T,S);
-P = zeros(S,S,T);
+h = zeros(S,1);      
+P = eye(S);
+hSmooth = zeros(T,S);
+PSmooth = zeros(S,S,T);
 
 
 %% Kalman forward recursion (KF)
@@ -30,76 +30,65 @@ for ii = 1:T
     Rit = RR(index(ii,:)==1, index(ii,:)==1);
     
     % prediction error
-    nu = y - Hit*Zp;  
-    OM = Hit*Pp*Hit'+ Rit;    
+    nu = y - Hit*h;  
+    O = Hit*P*Hit'+ Rit;    
 
     % Kalman gain
-    invOM = inv(OM);  % invert separately for performance
-    K = Pp*Hit'*invOM;
+    invO = inv(O);  % invert separately for performance
+    K = P*Hit'*invO;
     
     % update step
-    Ztt = Zp + K*nu;
-    Ptt = Pp - K*Hit*Pp;
+    htt = h + K*nu;
+    Ptt = P - K*Hit*P;
     
     % prediction step is different (smaller dimension)
     if ii < T
-        Zp = F*Ztt;
-        Pp = F*Ptt*F' + QQ;
+        h = F*htt;
+        P = F*Ptt*F' + QQ;
     end
     
     % save iteration for smoother
-    Z(ii,:) = Ztt';
-    P(:,:,ii) = Ptt;
+    hSmooth(ii,:) = htt';
+    PSmooth(:,:,ii) = Ptt;
     
 end
  
-% this line here is again to match the previous ordering
-% if AR==2 && M==4 && Q==1, yhat_corr=Z(:,[1,7:10])*H(:,[1,7:10])'; end
-
 
 %% Kalman backward recursion (KC)
 
 % reconstruct distribution of states to get first draw 
-Zdraw(T,:) = mvnrndAlt(Ztt,Ptt,1);  % Zdraw(T|T) ~ N(S(T|T),P(T|T)); first iteration in smoother = last iteration in filter
-
+latentDraw(T,:) = mvnrndAlt(htt,Ptt,1);  % stateDraw(T|T) ~ N(state(T|T), stateUncertainty(T|T)); first iteration in smoother = last iteration in filter
 
 % selection of matrices due to sparsity in the error covariance matrix in 
 % state equation (efficiency gain and avoid singular matrix, see matrices5variables.pdf)
-km = [1, L+1:L:L+L*Q, L+L*Q+1:AR:L+L*Q+AR*M];  % size of jumps in rows of matrix based on m2q conversion
-
-% ordering
-%if AR==2 && M==4 && Q==1, km = [1,2,3,4,5,6]; end
-
-Qstar = QQ(km,km);
-Fstar = F(km,:);
+pick = [1, L+1:L:L+L*Q, L+L*Q+1:AR:L+L*Q+AR*M];  % size of jumps in rows of matrix based on m2q conversion
+Fstar = F(pick,:);
+Qstar = QQ(pick,pick);
 
 % smoothing
 for ii = T-1:-1:1
     
     % define state mean and variance for backward recursion
-    Zf = Zdraw(ii+1,km)';  % ht+1
-    Ztt = Z(ii,:)';  % ht|t (= ht|T)
-    Ptt = P(:,:,ii);  % Pt|t (= Pt|T)
+    hLead = latentDraw(ii+1,pick)';  % ht+1
+    httSmooth = hSmooth(ii,:)';  % ht|t (= ht|T)
+    PttSmooth = PSmooth(:,:,ii);  % Pt|t (= Pt|T)
     
     % update step
     % define variables that simplify computation of moments
-    OMsmooth = Fstar*Ptt*Fstar' + Qstar;  % prediction variance state eq
-    Ksmooth = Ptt*Fstar'*inv(OMsmooth);  % Kalman gain
-    nusmooth = Zf - Fstar*Ztt;  % state error
+    OSmooth = Fstar*PttSmooth*Fstar' + Qstar;  % prediction variance state eq
+    KSmooth = PttSmooth*Fstar'*inv(OSmooth);  % Kalman gain
+    nuSmooth = hLead - Fstar*httSmooth;  % state error
 
     % state moments to draw state
-    Zmean = Ztt + Ksmooth*nusmooth;  % ht+1|t, state mean (see Bayesian.pdf or eq. 13.6.11 and 13.6.12 Hamilton)
-    Zvar = Ptt - Ksmooth*Fstar*Ptt;  % Pt+1|t, state variance    
-    Zdraw(ii,:) = mvnrndAlt(Zmean,Zvar,1);  % draw
+    latentMean = httSmooth + KSmooth*nuSmooth;  % ht+1|t, state mean (see Bayesian.pdf or eq. 13.6.11 and 13.6.12 Hamilton)
+    latentCov = PttSmooth - KSmooth*Fstar*PttSmooth;  % Pt+1|t, state variance    
+    latentDraw(ii,:) = mvnrndAlt(latentMean,latentCov,1);  % draw
 
 end
-    
-% ordering
-% if AR==2 && M==4 && Q==1, Fdraw=Zdraw(:,d_to_e); end
 
 %% fill missing obs
 % use transition equation for forecasting missing obs or matching data
-yfilled = Z*H(1,:)';  
+yfilled = hSmooth*H(1,:)';  
      
 end
         

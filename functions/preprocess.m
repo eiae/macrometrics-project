@@ -60,7 +60,6 @@ sgt.FontSize = 20;
 yclean = yraw;  % copy to have same size
 % log levels
 
-
 % growth rates (period-on-period)
 % quarterly variables
 for n = 1:Q
@@ -73,7 +72,6 @@ for n = 1:Q
     end
     yclean(3,n) = NaN;  % loose first quarterly obs from lag
 end
-
 
 
 end
