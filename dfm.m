@@ -5,12 +5,6 @@ clc
 seed=0;  
 rng(seed);   
 
-%% to delete
-data = xlsread('rawdata2.xls',1,'r3:v860');     
-y = data;  % includes Q and M variables -> mixed frequency
-[T,N] = size(y);  % sample size and number of variables
-%%
-
 % data transformations for model
 yMean = nanmean(y)';  % compute stats to add moments back after computing factor
 ySd = nanstd(y)';  % avoid nan when computing stats
@@ -19,9 +13,9 @@ yModel = yStandard';
 
 % model specs
 AR = 2;  % number of lags for each component
-S =  N + N*Q + AR*M;   % number of states
 m2q = [(1/3);(2/3);1;(2/3);(1/3)];  % month-to-quarter conversion
 L = length(m2q);  % length of m2q conversion (additional lags from mapping) 
+S =  L + L*Q + AR*M;   % number of states
 
 
 %% priors
@@ -171,30 +165,26 @@ target = median(yPredicted,2);
 %% charts
 
 % plot target along factor
-time = 1952+2/12:1/12:2023+3/12;
-
 figure;
 subplot(2,1,1);
-plot(time,target');
-ylim([-15 10]);
-xlim([time(1) time(end)]);
+plot(dates, target');
+axis tight
 title('Monthly Real Activity Variable');
 
 subplot(2,1,2);
-plot(time,factor','-k');
+plot(dates,factor','-k');
 hold on
-plot(time,factor_bands(:,2:3)',':k');
-xlim([time(1) time(end)]);
-ylim([-15 10]);
+plot(dates,factor_bands(:,2:3)',':k');
+hold off
+axis tight
 title('Monthly Factor of Economic Activity');
 
 figure;
-plot(time,factor','r', LineWidth=1.5);
+plot(dates,factor','r', LineWidth=1.5);
 hold on
-plot(time,target', 'b', LineWidth=1.5);
+plot(dates,target', 'b', LineWidth=1.5);
 hold off
-xlim([time(1) time(end)]);
-ylim([-15 10]);
+axis tight
 legend('factor', 'variables')
 title('Monthly Observed vs Index of Economic Activity');
 

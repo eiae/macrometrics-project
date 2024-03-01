@@ -52,7 +52,10 @@ data = table2array(datatable(:,2:end));
 % Note: always put quarterly variables first
 
 %select = [1 2 3 4 5 7];  % select specific variables
-select = 1:size(data,2);
+select = [1 2 3 4 5 7 8 9 10 11 12 14 15];
+%select = [1 2 3 4 5];
+% select = 1:size(data,2);
+names = names(select);
 
 T = length(dates);
 N = length(select);
@@ -66,6 +69,11 @@ idx = 1-isnan(yraw);  % indicator to select filled values
 
 %% preprocess data
 y = preprocess(yraw,dates,names,T,N,Q,M);
+
+y = y(1:end-12*4,:);  % no covid
+T = size(y,1);
+idx = 1-isnan(y);
+dates = dates(1:end-12*4,:);
 
 
 %% run models

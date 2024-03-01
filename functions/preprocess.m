@@ -73,6 +73,11 @@ for n = 1:Q
     yclean(3,n) = NaN;  % loose first quarterly obs from lag
 end
 
+% monthly variables
+for n = Q+1:N
+    yclean(:,n) = [NaN; diff(log(yraw(:,n)))*100];  % add a NaN since diff() looses one obs
+end
+
 
 end
 
