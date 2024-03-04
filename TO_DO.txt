@@ -1,0 +1,8 @@
+Bayesian analysis:
+- check convergence of MCMC with recursive mean plot
+- plot prior and data likelihood against posterior
+
+Forecasting analysis:
+- do point and density forecast
+- compare in plot mean forecast from model and BMPE projection, compute difference
+- compute rmse of models

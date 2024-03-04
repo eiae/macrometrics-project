@@ -1,9 +1,11 @@
-function [latentDraw,yfilled] = drawLatent(vars,T,S,N,phi,sig2fact,lam,psi,sig2,index,Q,M,AR,m2q,L)
+function [latentDraw,yfilled,yfilledFactor] = drawLatent(vars,T,S,N,phi,sig2fact,lam,psi,sig2,index,Q,M,AR,m2q,L)
 %% Construct Kalman filter and Kalman smoother (KC algorithm)
 % Input:
 % - model params 
 % Output:
 % - sample/draws of states
+% - filled target using factor and idio
+% - filled target using factor only (to see explanatory power of model)
 % -------------------------------------------------------------------------
 
 % specs
@@ -88,7 +90,8 @@ end
 
 %% fill missing obs
 % use transition equation for forecasting missing obs or matching data
-yfilled = hSmooth*H(1,:)';  
+yfilled = hSmooth*H';  
+yfilledFactor = hSmooth(:,1:L)*H(:,1:L)';
      
 end
         

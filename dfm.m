@@ -1,14 +1,17 @@
 %% MF Bayesian DFM with unbalanced data
 
+% Disclaimer: code adapted from class which is based on routines written
+% by Gabriel Pérez-Quirós and Danilo Leiva-León
+
 close all
 clc
 seed=0;  
 rng(seed);   
 
 % data transformations for model
-yMean = nanmean(y)';  % compute stats to add moments back after computing factor
-ySd = nanstd(y)';  % avoid nan when computing stats
-[yStandard,~,~] = standardMissObsOutl(y);  % standardization accounting for missing obs and outliers
+yMean = nanmean(yDFM)';  % compute stats to add moments back after computing factor
+ySd = nanstd(yDFM)';  % avoid nan when computing stats
+[yStandard,~,~] = standardMissObsOutl(yDFM);  % standardization accounting for missing obs and outliers
 yModel = yStandard';
 
 % model specs
@@ -66,6 +69,8 @@ posterLoadCommon = zeros(length(loadCommon), totDrawsKeep);
 posterCoeffIdio = zeros(length(coeffIdio), totDrawsKeep);
 posterErrCovIdio = zeros(length(errCovIdio), totDrawsKeep);
 
+correlTargetPredAndPredComm = [];
+
 
 %% posterior
 
@@ -80,13 +85,15 @@ for itr = 1:totDraws
     % draw the latent, given the parameters and the data
     % =====================================================================
 
-    [latent, yFill] = drawLatent(yModel, T, S, N, ...
+    [latent, yFill, yFillCommon] = drawLatent(yModel, T, S, N, ...
         coeffCommon, errCovCommon, loadCommon, coeffIdio, errCovIdio, ...
         idx, Q, M, AR, m2q, L);
     latentCommon = latent(:,1);  % get latent of common component
     latentIdio = latent(:, [L+1:L:L+L*Q, L+L*Q+1:AR:L+L*Q+AR*M]);  % get latent of idio component
-    yEstimate = yFill * ySd(1) + yMean(1);  % add mean and std of target
-
+    yEstimate = yFill(:,1) * ySd(1) + yMean(1);  % add mean and std of target
+    %yEstimate = yFill(:,1);
+    yEstimateCommon = yFillCommon(:,1) * ySd(1) + yMean(1);  % add mean and std of target
+    %yEstimateCommon = yFillCommon(:,1);
 
     % draw the parameters, given the latent and the data
     % =====================================================================
@@ -146,6 +153,12 @@ for itr = 1:totDraws
 
         % predicted target (filled using transition equation in ss)
         yPredicted(:, itr-totDrawsBurn) = yEstimate;
+
+        % predicted target (filled using common part of transition equation in ss)
+        yPredictedCommon(:, itr-totDrawsBurn) = yEstimateCommon;
+
+        % correlation
+        correlTargetPredAndPredComm = [correlTargetPredAndPredComm; corr(yEstimate,yEstimateCommon)];
     end
 
     waitbar(itr/totDraws, wait, sprintf('Gibbs sampling: %d%%', round(itr/totDraws*100)));
@@ -155,38 +168,70 @@ close(wait)
 toc
 
 % get summary of posteriors
-factor = median(factorFiltered,2);
-prct = [5 16 84 95];
-factor_bands = prctile(factorFiltered, prct, 2);
+target = yDFM(:,1);
+pred = median(yPredicted,2);
 
-target = median(yPredicted,2);
+factor = median(yPredictedCommon,2);
+prct = [10 16 84 90];
+factor_bands = prctile(yPredictedCommon, prct, 2);
+
+correl = median(correlTargetPredAndPredComm,1);
+disp(correl)
 
 
 %% charts
 
-% plot target along factor
+% compare quarterly series
+datesQ = dates(~isnan(target));  % quarterly dates
+
+targetQ = [];
+factorQ = [];
+
+i = 3*2;  % 3 periods per quarter and one lag due to growth
+while i <= T  
+    targetQ = [targetQ; target(i)];  
+    factorQ = [factorQ; factor(i)];  
+    i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
+end
+
+% plot target along factor in quarterly frequency
+figure;
+plot(datesQ, factorQ, Color='r', LineWidth=1.5);
+hold on
+plot(datesQ, targetQ, Color='b', LineWidth=1.5)
+hold off
+axis tight
+legend('factor', 'target')
+title('Quarterly Observed vs Index of Economic Activity');
+
+disp(corr(targetQ,factorQ))
+
+
+% plot target along factor in monthly frequency
 figure;
 subplot(2,1,1);
-plot(dates, target');
+plot(dates, pred, 'b', LineWidth=1.2);
 axis tight
-title('Monthly Real Activity Variable');
+title('Monthly Predicted Real Activity Variable');
 
 subplot(2,1,2);
-plot(dates,factor','-k');
+plot(dates, factor,'k', LineWidth=1.2);
 hold on
-plot(dates,factor_bands(:,2:3)',':k');
+plot(dates,factor_bands(:,[1,4]),':r', LineWidth=0.8);
 hold off
 axis tight
-title('Monthly Factor of Economic Activity');
+title('Monthly Index of Economic Activity');
 
+
+% plot target along factor in mixed frequency
 figure;
-plot(dates,factor','r', LineWidth=1.5);
-hold on
-plot(dates,target', 'b', LineWidth=1.5);
-hold off
+plot(dates, target, 'ro');
+hold on; 
+plot(dates, pred, 'b', 'Linewidth',2)
+legend('quarterly target', 'monthly predicted')
 axis tight
-legend('factor', 'variables')
-title('Monthly Observed vs Index of Economic Activity');
+title('Quarterly Observed vs Monthly Predicted Real Activity Variable');
 
-disp(corr(target,factor))
+
+
 

@@ -51,35 +51,41 @@ data = table2array(datatable(:,2:end));
 % 15 SBI -> Supply-bottleneck - Other - Soft - M
 % Note: always put quarterly variables first
 
-%select = [1 2 3 4 5 7];  % select specific variables
-select = [1 2 3 4 5 7 8 9 10 11 12 14 15];
-%select = [1 2 3 4 5];
-% select = 1:size(data,2);
-names = names(select);
+%selected = [1 2 3 4 5 7];  % select specific variables
+%selected = [1 2 3 4 5 7 8 9 10 11 12 14 15];
+%selected = [1 4 5 6 7 9 10];
+selected = 1:size(data,2);
+names = names(selected);
 
 T = length(dates);
-N = length(select);
+N = length(selected);
 
 Q = 1;  % number of quarterly variables
 M = N-Q;  % number of monthly variables
 
-yraw = data(:,select);  % observables
+yraw = data(:,selected);  % observables
 idx = 1-isnan(yraw);  % indicator to select filled values
 
 
 %% preprocess data
-y = preprocess(yraw,dates,names,T,N,Q,M);
+yDFM = preprocessDFM(yraw,dates,names,selected,T,N,Q,M);
+yVAR = preprocessVAR(yraw,dates,names,selected,T,N,Q,M);
 
-y = y(1:end-12*4,:);  % no covid
-T = size(y,1);
-idx = 1-isnan(y);
-dates = dates(1:end-12*4,:);
+% no covid
+% yraw = yraw(1:end-12*4,:);  
+% T = size(yraw,1);
+% idx = 1-isnan(yraw);
+% dates = dates(1:end-12*4,:);
+% y = preprocess(yraw,dates,names,selected,T,N,Q,M);
 
 
 %% run models
-run('dfm');
-run('var');
+run('DFM');
+run('VAR');
 
 
-%% plot charts
+%% comparison ECB (B)MPE projections
+
+
+%% comparison analysis
 
