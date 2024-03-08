@@ -86,6 +86,26 @@ run('VAR');
 
 %% comparison ECB (B)MPE projections
 
+% load ECB data
+datatableECB = readtable('ECB_projections.xlsx', ReadVariableNames=true);  
+namesECB = datatableECB.Properties.VariableNames(2:end);
+datesECB = table2array(datatableECB(:,1));
+dataECB = table2array(datatableECB(:,2:end));
+
+% plot latest data along projections
+yearBack = 5;
+
+figure;
+plot(datesECB(end-4*yearBack:end), dataECB(end-4*yearBack:end,2), Color=[1 0.71 0], LineWidth=1.5)
+hold on
+plot(datesECB(end-4*yearBack:end), dataECB(end-4*yearBack:end,1), Color=[0 0.22 0.6], LineWidth=1.5)
+axis tight
+grid on 
+legend(namesECB{2}, namesECB{1})
+
+sgt = sgtitle('ECB Macroeconomic Projections on euro area real GDP growth', 'Interpreter','latex');
+sgt.FontSize = 20;
+
 
 %% comparison analysis
 
