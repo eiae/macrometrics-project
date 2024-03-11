@@ -70,6 +70,7 @@ posterCoeffIdio = zeros(length(coeffIdio), totDrawsKeep);
 posterErrCovIdio = zeros(length(errCovIdio), totDrawsKeep);
 
 correlTargetPredAndPredComm = [];
+correlTargetObsAndPredComm = [];
 
 
 %% posterior
@@ -159,6 +160,11 @@ for itr = 1:totDraws
 
         % correlation
         correlTargetPredAndPredComm = [correlTargetPredAndPredComm; corr(yEstimate,yEstimateCommon)];
+        
+        nonMissTarget = ~isnan(yDFM(:,1));  
+        yTargetObs = yDFM(nonMissTarget,1);
+        yEstimateCommonQ = yEstimateCommon(nonMissTarget);
+        correlTargetObsAndPredComm = [correlTargetObsAndPredComm; corr(yTargetObs,yEstimateCommonQ)];
     end
 
     waitbar(itr/totDraws, wait, sprintf('Gibbs sampling: %d%%', round(itr/totDraws*100)));
@@ -168,49 +174,29 @@ close(wait)
 toc
 
 % get summary of posteriors
-target = yDFM(:,1);
-pred = median(yPredicted,2);
+target = median(yPredicted,2);  % predicted with common and idio
 
-factor = median(yPredictedCommon,2);
+common = median(yPredictedCommon,2);  % predicted with common 
+
+factor = median(factorFiltered,2);
 prct = [10 16 84 90];
-factor_bands = prctile(yPredictedCommon, prct, 2);
+factor_bands = prctile(factorFiltered, prct, 2);
 
-correl = median(correlTargetPredAndPredComm,1);
-disp(correl)
+% correlation monthly predicted with idio + common vs only common
+correlPred = median(correlTargetPredAndPredComm,1);
+disp(correlPred)
+
+% correlation quarterly observable vs predicted common
+correlObs = median(correlTargetObsAndPredComm,1);
+disp(correlObs)
 
 
 %% charts
 
-% compare quarterly series
-datesQ = dates(~isnan(target));  % quarterly dates
-
-targetQ = [];
-factorQ = [];
-
-i = 3*2;  % 3 periods per quarter and one lag due to growth
-while i <= T  
-    targetQ = [targetQ; target(i)];  
-    factorQ = [factorQ; factor(i)];  
-    i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
-end
-
-% plot target along factor in quarterly frequency
-figure;
-plot(datesQ, factorQ, Color='r', LineWidth=1.5);
-hold on
-plot(datesQ, targetQ, Color='b', LineWidth=1.5)
-hold off
-axis tight
-legend('factor', 'target')
-title('Quarterly Observed vs Index of Economic Activity');
-
-disp(corr(targetQ,factorQ))
-
-
 % plot target along factor in monthly frequency
 figure;
 subplot(2,1,1);
-plot(dates, pred, 'b', LineWidth=1.2);
+plot(dates, target, 'b', LineWidth=1.2);
 axis tight
 title('Monthly Predicted Real Activity Variable');
 
@@ -223,14 +209,37 @@ axis tight
 title('Monthly Index of Economic Activity');
 
 
-% plot target along factor in mixed frequency
+% plot target along predicted from common in quarterly frequency
+datesQ = dates(~isnan(yDFM(:,1)));  % quarterly dates
+
+targetQ = [];
+commonQ = [];
+
+i = 3*2;  % 3 periods per quarter and one lag due to growth
+while i <= T  
+    targetQ = [targetQ; target(i)];  
+    commonQ = [commonQ; common(i)];  
+    i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
+end
+
 figure;
-plot(dates, target, 'ro');
-hold on; 
-plot(dates, pred, 'b', 'Linewidth',2)
-legend('quarterly target', 'monthly predicted')
+plot(datesQ, commonQ, Color='r', LineWidth=1.5);
+hold on
+plot(datesQ, targetQ, Color='b', LineWidth=1.5)
+hold off
 axis tight
-title('Quarterly Observed vs Monthly Predicted Real Activity Variable');
+legend('predicted with common', 'predicted with common & idiosyncratic')
+title('Quarterly Predicted only with Common Component vs Predicted Real Activity Variable');
+
+
+% plot target in mixed frequency
+figure;
+plot(datesQ, targetQ, 'ro');
+hold on; 
+plot(dates, target, 'b', 'Linewidth',2)
+legend('quarterly predicted', 'monthly predicted')
+axis tight
+title('Quarterly vs Monthly Predicted Real Activity Variable');
 
 
 

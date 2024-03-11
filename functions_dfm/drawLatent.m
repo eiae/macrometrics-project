@@ -36,7 +36,7 @@ for ii = 1:T
     O = Hit*P*Hit'+ Rit;    
 
     % Kalman gain
-    invO = inv(O);  % invert separately for performance
+    invO = invNonPdMat(O);  % invert separately for performance
     K = P*Hit'*invO;
     
     % update step
@@ -78,7 +78,7 @@ for ii = T-1:-1:1
     % update step
     % define variables that simplify computation of moments
     OSmooth = Fstar*PttSmooth*Fstar' + Qstar;  % prediction variance state eq
-    KSmooth = PttSmooth*Fstar'*inv(OSmooth);  % Kalman gain
+    KSmooth = PttSmooth*Fstar'*invNonPdMat(OSmooth);  % Kalman gain
     nuSmooth = hLead - Fstar*httSmooth;  % state error
 
     % state moments to draw state

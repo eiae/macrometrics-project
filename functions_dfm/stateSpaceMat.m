@@ -22,8 +22,8 @@ Rs = zeros(N,N);
 
 % F: coeff matrix state equation
 z1 = par(Q+M+1:Q+M+AR);  % phi (autoregressive of common)
-z1 = z1*0;  % set to zero to avoid having the M2Q lags of quarterly idio
 z2 = par(Q+M+AR+1:Q+M+AR*2);  % psi of quarterly (autoregressive of idio)
+z2 = z2*0;  % set to zero to avoid having the M2Q lags of quarterly idio
 pamz3 = par(Q+M+AR*2+1:Q+M+AR*2+M*AR); % psi of monthly (autoregressive of idio)
 z3 = alternateIdioMat(AR*M, AR*M, AR, pamz3);
 
