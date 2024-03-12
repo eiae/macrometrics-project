@@ -19,6 +19,7 @@ AR = 2;  % number of lags for each component
 m2q = [(1/3);(2/3);1;(2/3);(1/3)];  % month-to-quarter conversion
 L = length(m2q);  % length of m2q conversion (additional lags from mapping) 
 S =  L + L*Q + AR*M;   % number of states
+H = 36;  % forecast horizon
 
 
 %% priors
@@ -71,6 +72,8 @@ posterErrCovIdio = zeros(length(errCovIdio), totDrawsKeep);
 
 correlTargetPredAndPredComm = [];
 correlTargetObsAndPredComm = [];
+
+forecastTarget = [];
 
 
 %% posterior
@@ -168,6 +171,16 @@ for itr = 1:totDraws
         yEstimateCommonQ = yEstimateCommon(nonMissTarget);
         correlTargetObsAndPredComm = [correlTargetObsAndPredComm; corr(yTargetObs,yEstimateCommonQ)];
 
+        % forecast
+        yForecast = zeros(H+AR,1);  % create new forecast each iteration
+        yForecast(1:AR) = yEstimate(end-AR+1:end); % starting values for forecast based on AR lags 
+        B = [1; 0.3; 0.1];  % random walk process with 2 lags
+        cfactor = 1;  % sqrt(sigma2);  % standard deviation of the error cov
+        for h = AR+1:H+AR
+            yForecast(h) = [1 yForecast(h-1) yForecast(h-2)]*B + (randn(1,1)*cfactor);
+        end
+        forecastTarget = [forecastTarget, [yEstimate; yForecast(AR+1:end)]];  % concatenate history with forecast (taking into account initial values taken last observation depending on number of lags)
+
     end
 
     waitbar(itr/totDraws, wait, sprintf('Gibbs sampling: %d%%', round(itr/totDraws*100)));
@@ -182,7 +195,7 @@ target = median(yPredicted,2);  % predicted with common and idio
 common = median(yPredictedCommon,2);  % predicted with common 
 
 factor = median(factorFiltered,2);
-prct = [10 16 84 90];
+prct = [10 90];
 factor_bands = prctile(factorFiltered, prct, 2);
 
 % correlation monthly predicted with idio + common vs only common
@@ -192,6 +205,15 @@ disp(correlPred)
 % correlation quarterly observable vs predicted common
 correlObs = median(correlTargetObsAndPredComm,1);
 disp(correlObs)
+
+% forecast
+forecast = median(forecastTarget,2);
+forecast_bands = prctile(forecastTarget, prct, 2);
+datesForecast = [dates; (dates(end) + calmonths(1:H))'];
+
+forecastPlot = [NaN(T-1,1); forecast(end-H:end)];
+forecastPlotBands = [NaN(T-1,length(prct)); forecast_bands(end-H:end,:)];
+historyPlot = [target; NaN(H,1)];
 
 
 %% charts
@@ -206,7 +228,7 @@ title('Monthly Predicted Real Activity Variable');
 subplot(2,1,2);
 plot(dates, factor,'k', LineWidth=1.2);
 hold on
-plot(dates,factor_bands(:,[1,4]),':r', LineWidth=0.8);
+plot(dates,factor_bands(:,[1,end]),':r', LineWidth=0.8);
 hold off
 axis tight
 title('Monthly Index of Economic Activity');
@@ -239,11 +261,26 @@ title('Quarterly Predicted only with Common Component vs Predicted Real Activity
 figure;
 plot(datesQ, targetQ, 'ro');
 hold on; 
-plot(dates, target, 'b', 'Linewidth',2)
+plot(dates, target, Color='b', Linewidth=2)
 legend('quarterly predicted', 'monthly predicted')
 axis tight
 title('Quarterly vs Monthly Predicted Real Activity Variable');
 
 
+% plot point and density forecast
+figure;
+plot(datesForecast, historyPlot, Color='b', Linewidth=2)
+hold on;
+plot(datesForecast, forecastPlot, Color='r', Linewidth=1.5, LineStyle='-')
+hold on;
+plot(datesForecast(T:end)' , [forecastPlotBands(T:end,1), forecastPlotBands(T:end,end)],...
+    Color='r', LineWidth=1, LineStyle=':')
+hFill = [datesForecast(T:end)' fliplr(datesForecast(T:end)')];
+inBetween = [forecastPlotBands(T:end,1)', fliplr(forecastPlotBands(T:end,end)')];
+fill(hFill , inBetween, 'r', FaceAlpha=0.2, LineStyle='none');
+legend('history', 'point forecast', 'credible bands 90%')
+axis tight
+grid on
+title('Forecast of Monthly Predicted Real Activity Variable');
 
 

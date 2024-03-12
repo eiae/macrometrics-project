@@ -51,10 +51,10 @@ data = table2array(datatable(:,2:end));
 % 15 SBI -> Supply-bottleneck - Other - Soft - M
 % Note: always put quarterly variables first
 
-%selected = [1 2 3 4 5 7];  % select specific variables
+selected = [1 2 3 4 5 7];  % select specific variables
 %selected = [1 2 3 4 5 7 8 9 10 11 12 14 15];
 %selected = [1 4 5 6 7 9 10];
-selected = 1:size(data,2);
+%selected = 1:size(data,2);
 names = names(selected);
 
 T = length(dates);
