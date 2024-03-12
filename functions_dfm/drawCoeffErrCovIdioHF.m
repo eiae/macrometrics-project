@@ -1,4 +1,4 @@
-function [B,sigma2] = drawCoeffErrCovIdio(ndx,zz,sigma2,Sigma0,B0,T0,D0,index,AR)
+function [B,sigma2] = drawCoeffErrCovIdioHF(ndx,zz,sigma2,Sigma0,B0,T0,D0,index,AR)
 %% Generate draw of autoregressive coeff and error cov in idiosyncratic component for monthly
 % Input:
 % - sample of states

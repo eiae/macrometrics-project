@@ -1,4 +1,4 @@
-function B = drawLoadCommon(ndx,yy,zz,psi,sigma2,Sigma0,B0,index,AR)
+function B = drawLoadIdioHF(ndx,yy,zz,psi,sigma2,Sigma0,B0,index,AR)
 %% Generate draw of loadings in common component for monthly
 % Input:
 % - sample of states

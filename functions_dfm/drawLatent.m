@@ -36,7 +36,7 @@ for ii = 1:T
     O = Hit*P*Hit'+ Rit;    
 
     % Kalman gain
-    invO = invNonPdMat(O);  % invert separately for performance
+    invO = inv(O);  % invert separately for performance
     K = P*Hit'*invO;
     
     % update step
@@ -78,7 +78,7 @@ for ii = T-1:-1:1
     % update step
     % define variables that simplify computation of moments
     OSmooth = Fstar*PttSmooth*Fstar' + Qstar;  % prediction variance state eq
-    KSmooth = PttSmooth*Fstar'*invNonPdMat(OSmooth);  % Kalman gain
+    KSmooth = PttSmooth*Fstar'*inv(OSmooth);  % Kalman gain
     nuSmooth = hLead - Fstar*httSmooth;  % state error
 
     % state moments to draw state
@@ -89,7 +89,7 @@ for ii = T-1:-1:1
 end
 
 %% fill missing obs
-% use transition equation for forecasting missing obs or matching data
+% use measurement equation for forecasting missing obs or matching data
 yfilled = hSmooth*H';  
 yfilledFactor = hSmooth(:,1:L)*H(:,1:L)';
      

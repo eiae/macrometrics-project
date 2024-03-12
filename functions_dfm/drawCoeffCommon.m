@@ -16,8 +16,8 @@ X = X(lag+1:end,:);
 sigma2 = 1;   % normalized for identification
      
 % posterior moments for coeff|erro cov => Gaussian(posterior_mean, posterior_variance)
-M = invNonPdMat(Sigma0+(1/sigma2)*(X'*X))*(invNonPdMat(Sigma0)*B0+(1/sigma2)*X'*Y);
-V = invNonPdMat(Sigma0+(1/sigma2)*(X'*X));
+M = inv(Sigma0+(1/sigma2)*(X'*X))*(inv(Sigma0)*B0+(1/sigma2)*X'*Y);
+V = inv(Sigma0+(1/sigma2)*(X'*X));
 
 chck = -1;
 while chck<0  % check for stability

@@ -37,7 +37,7 @@ priorCovCoeffIdio = eye(AR);
 
 % error cov of idiosyncratic components (sigma)
 priorShapeErrCovIdio = 0;
-priorScaleErrCovIdio = 0.1;  %0.1*(priorShapeErrCovIdio-1) -> negative which can create issues since posterior scale becomes negative and cannot draw from Gamma distribution
+priorScaleErrCovIdio = 0.1*(priorShapeErrCovIdio-1);
 
 
 %% Monte carlo
@@ -54,18 +54,18 @@ coeffCommon = 0.5*ones(AR,1);
 % error cov of common component 
 errCovCommon = 1;  % normalized to one 
 
-% loadings of idiosyncratic component (lambda or gamma) 
-loadIdio = [ones(Q,1); 0.1*ones(M,1)];  % (first for quarterly, then for monthly)
+% loadings of common component (lambda or gamma) 
+loadCommon = [ones(Q,1); 0.1*ones(M,1)];  % (first for quarterly, then for monthly)
 
 % autoregressive coeff of idiosyncratic component (psi1, psi2)
 coeffIdio = [0.2*ones(Q*AR,1); 0.2*ones(M*AR,1)];
 
 % error cov of idiosyncratic component (sigma)
-errCovIdio = 0.1*ones(Q+M,1);
+errCovIdio = 0.6*ones(Q+M,1);
 
 % preallocate
 posterCoeffCommon = zeros(length(coeffCommon), totDrawsKeep);
-posterLoadCommon = zeros(length(loadIdio), totDrawsKeep);
+posterLoadCommon = zeros(length(loadCommon), totDrawsKeep);
 posterCoeffIdio = zeros(length(coeffIdio), totDrawsKeep);
 posterErrCovIdio = zeros(length(errCovIdio), totDrawsKeep);
 
@@ -87,7 +87,7 @@ for itr = 1:totDraws
     % =====================================================================
 
     [latent, yFill, yFillCommon] = drawLatent(yModel, T, S, N, ...
-        coeffCommon, errCovCommon, loadIdio, coeffIdio, errCovIdio, ...
+        coeffCommon, errCovCommon, loadCommon, coeffIdio, errCovIdio, ...
         idx, Q, M, AR, m2q, L);
     latentCommon = latent(:,1);  % get latent of common component
     latentIdio = latent(:, [L+1:L:L+L*Q, L+L*Q+1:AR:L+L*Q+AR*M]);  % get latent of idio component
@@ -109,13 +109,13 @@ for itr = 1:totDraws
     %----------------------------------------------------------------------
     % draw the factor loadings
     for jj = 1:Q  % lower frequency   
-        loadIdio(jj) = drawLoadIdioLF(jj, yModel, latentCommon, ...
+        loadCommon(jj) = drawLoadCommonLF(jj, yModel, latentCommon, ...
             errCovIdio(jj), priorCovLoadCommon, priorMeanLoadCommon, ...
             idx, m2q, L);  
     end
 
     for jj = 1:M  % higher frequency
-        loadIdio(Q+jj) = drawLoadIdioHF(Q+jj, yModel, latentCommon, ...
+        loadCommon(Q+jj) = drawLoadCommon(Q+jj, yModel, latentCommon, ...
             coeffIdio(AR*Q+AR*(jj-1)+1:AR*Q+AR*jj), ...
             errCovIdio(Q+jj), ...
             priorCovLoadCommon, priorMeanLoadCommon, ...
@@ -124,13 +124,13 @@ for itr = 1:totDraws
 
     % draw the autoregressive coeff and error cov (both in same step)
     for jj = 1:Q  % lower frequency
-        errCovIdio(jj) = drawErrCovIdioLF(jj, latentIdio, ...
+        errCovIdio(jj) = drawErrCovIdio(jj, latentIdio, ...
             priorShapeErrCovIdio, priorScaleErrCovIdio, ...
             idx);
     end
     
     for jj = 1:M  % higher frequency
-        [coeffIdio(AR*Q+AR*(jj-1)+1:AR*Q+AR*jj), errCovIdio(Q+jj)] = drawCoeffErrCovIdioHF(Q+jj, ...
+        [coeffIdio(AR*Q+AR*(jj-1)+1:AR*Q+AR*jj), errCovIdio(Q+jj)] = drawCoeffErrCovIdio(Q+jj, ...
             latentIdio, errCovIdio(Q+jj), priorCovCoeffIdio, ...
             priorMeanCoeffIdio, priorShapeErrCovIdio, priorScaleErrCovIdio, ... 
             idx, AR);
@@ -143,8 +143,8 @@ for itr = 1:totDraws
     if itr > totDrawsBurn
         % autoregressive coeff in common component (phi1, phi2)
         posterCoeffCommon(:, itr-totDrawsBurn) = coeffCommon;
-        % loadings in idiosyncratic components (lambda or gamma)
-        posterLoadCommon(:, itr-totDrawsBurn) = loadIdio;
+        % loadings in common components (lambda or gamma)
+        posterLoadCommon(:, itr-totDrawsBurn) = loadCommon;
         % autoregressive coeff of idiosyncratic component (psi1, psi2)
         posterCoeffIdio(:, itr-totDrawsBurn) = coeffIdio;
         % error cov of idiosyncratic component (sigma)
@@ -167,7 +167,6 @@ for itr = 1:totDraws
         yTargetObs = yDFM(nonMissTarget,1);
         yEstimateCommonQ = yEstimateCommon(nonMissTarget);
         correlTargetObsAndPredComm = [correlTargetObsAndPredComm; corr(yTargetObs,yEstimateCommonQ)];
-
     end
 
     waitbar(itr/totDraws, wait, sprintf('Gibbs sampling: %d%%', round(itr/totDraws*100)));

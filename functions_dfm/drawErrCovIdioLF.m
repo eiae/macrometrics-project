@@ -1,4 +1,4 @@
-function [sigma2] = drawErrCovIdio(ndx,zz,T0,D0,index)
+function [sigma2] = drawErrCovIdioLF(ndx,zz,T0,D0,index)
 %% Generate draw of error cov of idiosyncratic component for quarterly
 % Input:
 % - sample of states
@@ -22,7 +22,7 @@ T1 = T0+TT/2;
 D1 = (D0+(resids)'*(resids)/2);  % SSR
 
 % posterior draw for error cov|coeff => invGamma(posterior_shape, posterior_scale)
-sigma2 = 1/gamrnd(T1,1/D1);
+sigma2 = 1/gamrnd(T1,1/D1);  % careful if posterior scale (D1) becomes negative because prior scale (D0) is set to be negative and residuals computation ((resids)'*(resids)/2) too small -> would get NaN draw as scale param should not be negative
 
 end
 

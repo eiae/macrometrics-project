@@ -1,4 +1,4 @@
-function B = drawLoadCommonMiss(ndx,yy,z,sigma2,Sigma0,B0,index0,m2q,L)
+function B = drawLoadIdioLF(ndx,yy,z,sigma2,Sigma0,B0,index0,m2q,L)
 %% Generate draw of loadings in common component for quarterly 
 % Input:
 % - sample of states
