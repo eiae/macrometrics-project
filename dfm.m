@@ -19,7 +19,6 @@ AR = 2;  % number of lags for each component
 m2q = [(1/3);(2/3);1;(2/3);(1/3)];  % month-to-quarter conversion
 L = length(m2q);  % length of m2q conversion (additional lags from mapping) 
 S =  L + L*Q + AR*M;   % number of states
-H = 36;  % forecast horizon
 
 
 %% priors
@@ -195,7 +194,7 @@ target = median(yPredicted,2);  % predicted with common and idio
 common = median(yPredictedCommon,2);  % predicted with common 
 
 factor = median(factorFiltered,2);
-prct = [10 90];
+
 factor_bands = prctile(factorFiltered, prct, 2);
 
 % correlation monthly predicted with idio + common vs only common
@@ -282,5 +281,17 @@ legend('history', 'point forecast', 'credible bands 90%')
 axis tight
 grid on
 title('Forecast of Monthly Predicted Real Activity Variable');
+
+
+% get quarterly forecast
+forecastQ = [];
+forecast_bandsQ = [];
+
+i = 3*2;  % 3 periods per quarter and one lag due to growth
+while i <= T+H  
+    forecastQ = [forecastQ; forecast(i)];   
+    forecast_bandsQ = [forecast_bandsQ; forecast_bands(i,:)];
+    i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
+end
 
 

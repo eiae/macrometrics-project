@@ -1,5 +1,6 @@
-- Does the predicted target variable (idio + common) need to match the observable/GDP at the quarters (still correlation is 1)?
+- Does the predicted target variable (idio + common) need to match the observable/GDP at the quarters (still correlation is 1)? How to transform predicted as to make it match (for plotting purposes)? For BVAR it seems to match perfectly.
 - Compute correlation between predicted target from common vs from common + idio? If yes, do it at monthly or quarterly? If not, is it predicted target from common and GDP at quarterly?
 - What dynamic structure to use to forecast with DFM? Use AR(2) for predicted target with idio + common? Which coefficients? Which standard error?
+
 
 
