@@ -66,12 +66,12 @@ M = N-Q;  % number of monthly variables
 yraw = data(:,selected);  % observables
 idx = 1-isnan(yraw);  % indicator to select filled values
 
-prct = [10 90];  % percentiles for credible bands
+prct = [32 68];  % percentiles for credible bands
 H = 36;  % forecast horizon
 
 
 %% preprocess data
-yDFM = preprocessDFM(yraw,dates,names,selected,T,N,Q,M);forecast
+yDFM = preprocessDFM(yraw,dates,names,selected,T,N,Q,M);
 yVAR = preprocessVAR(yraw,dates,names,selected,T,N,Q,M);
 
 % no covid

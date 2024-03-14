@@ -95,9 +95,10 @@ for itr = 1:totDraws
         idx, Q, M, AR, m2q, L);
     latentCommon = latent(:,1);  % get latent of common component
     latentIdio = latent(:, [L+1:L:L+L*Q, L+L*Q+1:AR:L+L*Q+AR*M]);  % get latent of idio component
-    yEstimateNoMoments = yFill(:,1);
-    yEstimate = yFill(:,1) * ySd(1) + yMean(1);  % add mean and std of target
+    %yEstimate = yFill(:,1) * ySd(1) + yMean(1);  % add mean and std of target
+    yEstimate = yFill(:,1);
     yEstimateCommon = yFillCommon(:,1) * ySd(1) + yMean(1);  % add mean and std of target
+    %yEstimateCommon = yFillCommon(:,1);
 
     % draw the parameters, given the latent and the data
     % =====================================================================
@@ -188,8 +189,10 @@ for itr = 1:totDraws
             latentForecast(h,:) = transCoeff^h * latentForecast(h-1,:)' + randn(S,1); %*stdError;
             yForecast(h) =  latentForecast(h,:) * measureCoeff(1,:)';  %measureCoeff(1,1:L)'
         end
+        %yForecastTarget = yForecast(:,1) * ySd(1) + yMean(1);
         yForecastTarget = yForecast(:,1);
         forecastTarget = [forecastTarget, [yEstimate; yForecastTarget(2:end)]];  % concatenate history with forecast (taking into account initial values taken last observation depending on number of lags)
+        forecastTarget = forecastTarget * ySd(1) + yMean(1); 
     end
 
     waitbar(itr/totDraws, wait, sprintf('Gibbs sampling: %d%%', round(itr/totDraws*100)));

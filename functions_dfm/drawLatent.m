@@ -1,4 +1,4 @@
-function [latentDraw,yfilled,yfilledFactor] = drawLatent(vars,T,S,N,phi,sig2fact,lam,psi,sig2,index,Q,M,AR,m2q,L)
+function [latentDraw,yfilled,yfilledFactor,H,RR,F,QQ] = drawLatent(vars,T,S,N,phi,sig2fact,lam,psi,sig2,index,Q,M,AR,m2q,L)
 %% Construct Kalman filter and Kalman smoother (KC algorithm)
 % Input:
 % - model params 

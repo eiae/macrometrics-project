@@ -5,5 +5,4 @@ Forecasting analysis:
 
 Bayesian analysis:
 - check convergence of MCMC with recursive mean plot
-- plot prior and data likelihood against posterior
 
