@@ -84,7 +84,7 @@ plot(datesForecast(T:end)' , [forecastPlotBandsAlt(T:end,1), forecastPlotBandsAl
 hFill = [datesForecast(T:end)' fliplr(datesForecast(T:end)')];
 inBetween = [forecastPlotBandsAlt(T:end,1)', fliplr(forecastPlotBandsAlt(T:end,end)')];
 fill(hFill , inBetween, 'r', FaceAlpha=0.2, LineStyle='none');
-legend('history', 'point forecast', 'credible bands 90%')
+legend('history', 'point forecast', sprintf('credible bands %d%%',prct(end)))
 axis tight
 grid on
 title('Forecast of Monthly Predicted Real Activity Variable');

@@ -11,7 +11,8 @@ rng(seed);
 % data transformations for model
 yMean = nanmean(yDFM)';  % compute stats to add moments back after computing factor
 ySd = nanstd(yDFM)';  % avoid nan when computing stats
-[yStandard,~,~] = standardMissObsOutl(yDFM);  % standardization accounting for missing obs and outliers
+%[yStandard,~,~] = standardMissObsOutl(yDFM);  % standardization accounting for missing obs and outliers
+[yStandard,~,~] = standardMissObs(yDFM);  % standardization accounting for missing obs and outliers
 yModel = yStandard';
 
 % model specs
@@ -95,7 +96,7 @@ for itr = 1:totDraws
         idx, Q, M, AR, m2q, L);
     latentCommon = latent(:,1);  % get latent of common component
     latentIdio = latent(:, [L+1:L:L+L*Q, L+L*Q+1:AR:L+L*Q+AR*M]);  % get latent of idio component
-    yEstimateNoMoments = yFill(:,1);
+    %yEstimateNoMoments = yFill(:,1);
     yEstimate = yFill(:,1) * ySd(1) + yMean(1);  % add mean and std of target
     yEstimateCommon = yFillCommon(:,1) * ySd(1) + yMean(1);  % add mean and std of target
 
@@ -176,16 +177,19 @@ for itr = 1:totDraws
         %yForecast(1:AR) = yEstimate(end-AR+1:end); % starting values for forecast based on AR lags 
         %B = [1; 0.3; 0.1];  % random walk process with 2 lags
         %cfactor = 1;  % sqrt(sigma2);  % standard deviation of the error cov
+        % in the loop:
+        % yForecast(h) = [1 yForecast(h-1) yForecast(h-2)]*B + (randn(1,1)*cfactor);
                 
         yForecast = zeros(H+1,1);  % create new forecast each iteration
         yForecast(1) = yEstimate(end);
         latentForecast = zeros(H+1,S);
         latentForecast(1,:) = latent(end,:);
-        stdError = sqrt(diag(transCov));  % standard deviation of the error cov
+        stdError = sqrt(diag(transCov));  % standard deviation of the error cov in transition equation
         
-        for h = 2:H+1
-            %yForecast(h) = [1 yForecast(h-1) yForecast(h-2)]*B + (randn(1,1)*cfactor);
-            latentForecast(h,:) = transCoeff^h * latentForecast(h-1,:)' + randn(S,1); %*stdError;
+        for h = 2:H+1  
+            % transition equation to simulate forecast using VAR(1) dynamics
+            latentForecast(h,:) = transCoeff^h * latentForecast(h-1,:)' + randn(S,1); %.*stdError;  %randn(S,S)*stdError
+            % measurement equation to map latent and observables
             yForecast(h) =  latentForecast(h,:) * measureCoeff(1,:)';  %measureCoeff(1,1:L)'
         end
         yForecastTarget = yForecast(:,1);
@@ -214,6 +218,7 @@ disp(correlPred)
 % correlation quarterly observable vs predicted common
 correlObs = median(correlTargetObsAndPredComm,1);
 disp(correlObs)
+
 
 % forecast
 forecast = median(forecastTarget,2);
@@ -287,7 +292,7 @@ plot(datesForecast(T:end)' , [forecastPlotBands(T:end,1), forecastPlotBands(T:en
 hFill = [datesForecast(T:end)' fliplr(datesForecast(T:end)')];
 inBetween = [forecastPlotBands(T:end,1)', fliplr(forecastPlotBands(T:end,end)')];
 fill(hFill , inBetween, 'r', FaceAlpha=0.2, LineStyle='none');
-legend('history', 'point forecast', 'credible bands 90%')
+legend('history', 'point forecast', sprintf('credible bands %d%%',prct(end)))
 axis tight
 grid on
 title('Forecast of Monthly Predicted Real Activity Variable');
@@ -304,4 +309,16 @@ while i <= T+H
     i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
 end
 
+
+% ---
+% mismatch in scale for observable and predicted
+figure;
+plot(datesQ, yTargetObs, Color='k', LineWidth=1.5)
+hold on 
+plot(datesQ, yEstimate(nonMissTarget), Color='b', LineWidth=1.5)
+legend('Quarterly observable target', 'Quarterly predicted target')
+title('Observable vs Predicted')
+
+disp(corr(yTargetObs,yEstimate(nonMissTarget)))
+% ---
 

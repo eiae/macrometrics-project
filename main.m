@@ -1,6 +1,6 @@
 %% Macroeconometrics project
 % -------------------------------------------------------------------------
-% Forecasting performance between models and relative to ECB B/MPE
+% Forecasting performance of models relative to ECB B/MPE
 % - Mixed-frequency Bayesian Dynamic Factor Model
 % - Mixed-frequency Bayesian Vector Autoregressive Model
 % @ Erik Andres Escayola 
@@ -79,7 +79,7 @@ yVAR = preprocessVAR(yraw,dates,names,selected,T,N,Q,M);
 % T = size(yraw,1);
 % idx = 1-isnan(yraw);
 % dates = dates(1:end-12*4,:);
-% y = preprocess(yraw,dates,names,selected,T,N,Q,M);
+% yDFM = preprocessDFM(yraw,dates,names,selected,T,N,Q,M);
 
 
 %% run models
@@ -121,18 +121,16 @@ set(fig,'defaultAxesColorOrder',[[0 0 0]; [0 0 0]]);
 plot(datesECBDFM(end-periodsBack:end), dataECBDFM(end-periodsBack:end,2), Color=[1 0.71 0], LineWidth=1.5)
 hold on
 plot(datesECBDFM(end-periodsBack:end), dataECBDFM(end-periodsBack:end,1), Color=[0 0.22 0.6], LineWidth=1.5)
-ylabel('ECB')
-
-yyaxis right
+%ylabel('ECB')
+%yyaxis right
 plot(datesECBDFM(end-periodsBack:end), forecastQ(end-periodsBack:end), Color='k', LineWidth=1.5)
 hFill = [datesECBDFM(end-periodsBack:end)' fliplr(datesECBDFM(end-periodsBack:end)')];
 inBetween = [forecast_bandsQ(end-periodsBack:end,1)', fliplr(forecast_bandsQ(end-periodsBack:end,end)')];
 fill(hFill , inBetween, 'r', FaceAlpha=0.2, LineStyle='none');
-ylabel('DFM')
-
+%ylabel('DFM')
 axis tight
 grid on 
-legend(namesECB{2}, namesECB{1}, 'Median forecast DFM', 'Credible bands 90%', Location='best')
+legend(namesECB{2}, namesECB{1}, 'Median forecast DFM', sprintf('credible bands %d%%',prct(end)), Location='best')
 sgt = sgtitle('Comparison ECB projections and DFM forecast', 'Interpreter','latex');
 sgt.FontSize = 20;
 
@@ -147,13 +145,16 @@ sgt.FontSize = 20;
 horizonECB = 4*3;  % 3-year forecast horizon of ECB 
 forecastStart = length(datesECB) - length(datesECBDFM(end-horizonECB:end));
 
+% delta -> difference between ECB (Mar23-MPE) and DFM forecast for horizons
 forecastDeltaECBMar24vsDFM = dataECBDFM(forecastStart:end,1) - forecastQ(forecastStart:end);
 [fECBMar24vsDFM, xiECBMar24vsDFM] = ksdensity(forecastDeltaECBMar24vsDFM);
+figure;
+plot(xiECBMar24vsDFM,fECBMar24vsDFM, Color=[0 0.22 0.6], LineWidth=1.5);
+title('Kernel density of forecast differences between ECB Mar23 MPE and DFM')
 
+% correlation -> relation between ECB (Mar23-MPE) and DFM forecast for horizons
 forecastCorrECBMar24vsDFM = corr(dataECBDFM(forecastStart:end,1), forecastQ(forecastStart:end));
 fprintf('Forecast correlation between ECB Mar23 and DFM: %4.2f', forecastCorrECBMar24vsDFM)
 
-figure
-plot(xiECBMar24vsDFM,fECBMar24vsDFM, Color=[0 0.22 0.6], LineWidth=1.5);
-title('Kernel density of forecast differences between ECB Mar23 MPE and DFM')
+
 
