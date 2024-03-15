@@ -4,9 +4,8 @@
 % by Filippo Ferroni and Fabio Canova
 % https://github.com/naffe15/BVAR_/tree/master
 
+% clear
 clc
-seed=0;  
-rng(seed);  
  
 % model specs
 lags = 2;  % number of lags
@@ -69,43 +68,4 @@ while i <= T+H
     forecast_bandsAltQ = [forecast_bandsAltQ; forecast_bandsAlt(i,:)];
     i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
 end
-
-
-%% charts 
-
-% plot target in mixed frequency
-figure;
-plot(dates, obsAlt, 'Linewidth',2, 'marker','o', 'color','r');
-hold on; 
-plot(dates, targetAlt, 'Linewidth',2, 'color', colorVAR)
-legend('observed (quarterly)', 'index (monthly)')
-axis tight
-title('Quarterly Growth of Observed vs Index of Economic Activity');
-
-
-% plot point and density forecast
-figure;
-plot(datesForecast, historyPlotAlt, Color=colorVAR, Linewidth=2)
-hold on;
-plot(datesForecast, forecastPlotAlt, Color=colorVAR, Linewidth=1.5, LineStyle='-')
-hold on;
-plot(datesForecast(T:end)' , [forecastPlotBandsAlt(T:end,1), forecastPlotBandsAlt(T:end,end)],...
-    Color=colorVAR, LineWidth=1, LineStyle=':')
-hFill = [datesForecast(T:end)' fliplr(datesForecast(T:end)')];
-inBetween = [forecastPlotBandsAlt(T:end,1)', fliplr(forecastPlotBandsAlt(T:end,end)')];
-fill(hFill , inBetween, colorVAR, FaceAlpha=0.2, LineStyle='none');
-legend('history', 'point forecast', sprintf('credible bands %d%%',prct(end)), location='best')
-axis tight
-grid on
-title('Forecast of Monthly Predicted Real Activity Variable');
-
-
-% levels
-figure;
-plot(dates, obsAltLvl, 'Linewidth',2, 'marker','o', 'color','r'); 
-hold on; 
-plot(dates, targetAltLvl, 'Linewidth',2, 'color', colorVAR)
-legend('observed (quarterly)', 'index (monthly)')
-axis tight
-title('Quarterly Level of Observed vs Index of Economic Activity');
 

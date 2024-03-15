@@ -5,5 +5,7 @@ Bayesian analysis:
 - check convergence of MCMC with recursive mean plot
 
 Reporting:
-- Put results in Rmd or Mlx
+- Write state-space equations for core model
+- Clean BVAR code
+
 

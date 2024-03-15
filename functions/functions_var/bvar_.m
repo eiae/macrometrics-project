@@ -107,7 +107,7 @@ if any(any(isnan(y))) %== 1
     if any(sum(isnan(y),2) == ny)
         warning('Cannot activate the Mixed Frequency BVAR. Data contains raws that have only ''nan''s. Each variable is interpolated individually.')        
     else
-        disp('Activating the Mixed Frequency BVAR')
+        disp('Starting Mixed Frequency Bayesian VAR estimation...')
         mixed_freq_on = 1;
     end    
     index_nan_var = find(sum(isnan(y),1) ~= 0);
@@ -1030,7 +1030,7 @@ dd = 0;
 waitbar_yes = 0;
 if K > 99
     waitbar_yes = 1;
-    wb = waitbar(0, 'Generating draws from the Posterior Distribution');
+    wb = waitbar(0);
 end
 
 for  d =  1 : K
@@ -1292,7 +1292,9 @@ for  d =  1 : K
     end
     
     
-    if waitbar_yes, waitbar(d/K, wb); end
+    if waitbar_yes 
+        waitbar(d/K, wb, sprintf('Gibbs sampling for VAR: %d%%', round(d/K*100)));
+    end
     dd = 0; % reset 
 end
 if waitbar_yes, close(wb); end

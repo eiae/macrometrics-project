@@ -3,9 +3,8 @@
 % Disclaimer: code adapted from class which is based on routines written
 % by Gabriel Pérez-Quirós and Danilo Leiva-León
 
+% clear
 clc
-seed=0;  
-rng(seed);   
 
 % data transformations for model
 yMean = nanmean(yDFM)';  % compute stats to add moments back after computing factor
@@ -78,12 +77,14 @@ forecastTarget = [];
 %% estimation (MCMC -> posterior)
 
 % gibbs sampler
-wait = waitbar(0, 'Gibbs');
-tic
+disp('Starting Mixed Frequency Bayesian DFM estimation...')
+wait = waitbar(0);
+
+%tic
 for itr = 1:totDraws
     
     % display iter
-    disp(itr)
+    %disp(itr)
      
     % draw the latent, given the parameters and the data
     % =====================================================================
@@ -195,11 +196,11 @@ for itr = 1:totDraws
         forecastTarget = [forecastTarget, [yEstimate; yForecastTarget(2:end)]];  % concatenate history with forecast (taking into account initial values taken last observation depending on number of lags)
     end
 
-    waitbar(itr/totDraws, wait, sprintf('Gibbs sampling: %d%%', round(itr/totDraws*100)));
+    waitbar(itr/totDraws, wait, sprintf('Gibbs sampling for DFM: %d%%', round(itr/totDraws*100)));
 
 end
 close(wait)
-toc
+%toc
 
 
 %% results
@@ -209,20 +210,18 @@ obs = yDFM(:,1);
 
 % get summary of posteriors
 target = median(yPredicted,2);  % predicted with common and idio
-
 common = median(yPredictedCommon,2);  % predicted with common 
 
 factor = median(factorFiltered,2);
-
 factor_bands = prctile(factorFiltered, prct, 2);
 
 % correlation monthly predicted with idio + common vs only common
 correlPred = median(correlTargetPredAndPredComm,1);
-disp(correlPred)
+fprintf('Correlation between predicted target using common component vs common and idiosyncratic component (monthly):\n %4.2f \n', correlPred)
 
 % correlation quarterly observable vs predicted common
 correlObs = median(correlTargetObsAndPredComm,1);
-disp(correlObs)
+fprintf('Correlation between target vs predicted target using common component (quarterly):\n %4.2f \n', correlObs)
 
 % forecast
 forecast = median(forecastTarget,2);
@@ -232,6 +231,19 @@ datesForecast = [dates; (dates(end) + calmonths(1:H))'];
 forecastPlot = [NaN(T-1,1); forecast(end-H:end)];
 forecastPlotBands = [NaN(T-1,length(prct)); forecast_bands(end-H:end,:)];
 historyPlot = [target; NaN(H,1)];
+
+
+% collect quarterly predicted for comparison with target
+datesQ = dates(~isnan(yDFM(:,1)));  % quarterly dates
+targetQ = [];
+commonQ = [];
+
+i = 3*2;  % 3 periods per quarter and one lag due to growth
+while i <= T  
+    targetQ = [targetQ; target(i)];  
+    commonQ = [commonQ; common(i)];  
+    i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
+end
 
 % collect quarterly forecast for comparison to ECB
 forecastQ = [];
@@ -245,81 +257,4 @@ while i <= T+H
 end
 
 
-%% charts
 
-% plot target along factor in monthly frequency
-figure;
-subplot(2,1,1);
-plot(dates, target, Color=colorDFM, LineWidth=1.2);
-axis tight
-title('Monthly Predicted Real Activity Variable');
-
-subplot(2,1,2);
-plot(dates, factor, Color='k', LineWidth=1.2);
-hold on
-plot(dates,factor_bands(:,[1,end]),':r', LineWidth=0.8);
-hold off
-axis tight
-title('Monthly Index of Economic Activity');
-
-
-% plot target along predicted from common in quarterly frequency
-datesQ = dates(~isnan(yDFM(:,1)));  % quarterly dates
-
-targetQ = [];
-commonQ = [];
-
-i = 3*2;  % 3 periods per quarter and one lag due to growth
-while i <= T  
-    targetQ = [targetQ; target(i)];  
-    commonQ = [commonQ; common(i)];  
-    i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
-end
-
-figure;
-plot(datesQ, commonQ, Color='r', LineWidth=1.5);
-hold on
-plot(datesQ, targetQ, Color=colorDFM, LineWidth=1.5)
-hold off
-axis tight
-legend('predicted with common', 'predicted with common & idiosyncratic')
-title('Quarterly Predicted only with Common Component vs Predicted Real Activity Variable');
-
-
-% plot target in mixed frequency
-figure;
-plot(dates, obs, 'Linewidth',2, 'marker','o', 'color','r');
-hold on; 
-plot(dates, target, Color=colorDFM, Linewidth=2)
-legend('quarterly obsverved', 'monthly predicted')
-axis tight
-title('Quarterly vs Monthly Predicted Real Activity Variable');
-
-
-% plot point and density forecast
-figure;
-plot(datesForecast, historyPlot, Color=colorDFM, Linewidth=2)
-hold on;
-plot(datesForecast, forecastPlot, Color=colorDFM, Linewidth=1.5, LineStyle='-')
-hold on;
-plot(datesForecast(T:end)' , [forecastPlotBands(T:end,1), forecastPlotBands(T:end,end)],...
-    Color=colorDFM, LineWidth=1, LineStyle=':')
-hFill = [datesForecast(T:end)' fliplr(datesForecast(T:end)')];
-inBetween = [forecastPlotBands(T:end,1)', fliplr(forecastPlotBands(T:end,end)')];
-fill(hFill , inBetween, colorDFM, FaceAlpha=0.2, LineStyle='none');
-legend('history', 'point forecast', sprintf('credible bands %d%%',prct(end)))
-axis tight
-grid on
-title('Forecast of Monthly Predicted Real Activity Variable');
-
-% ---
-% mismatch in scale for observable and predicted
-figure;
-plot(datesQ, yTargetObs, Color='k', LineWidth=1.5)
-hold on 
-plot(datesQ, yEstimate(nonMissTarget), Color=colorDFM, LineWidth=1.5)
-legend('Quarterly observable target', 'Quarterly predicted target')
-title('Observable vs Predicted')
-
-disp(corr(yTargetObs,yEstimate(nonMissTarget)))
-% ---
