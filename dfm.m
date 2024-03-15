@@ -3,7 +3,6 @@
 % Disclaimer: code adapted from class which is based on routines written
 % by Gabriel Pérez-Quirós and Danilo Leiva-León
 
-close all
 clc
 seed=0;  
 rng(seed);   
@@ -41,7 +40,7 @@ priorShapeErrCovIdio = 0;
 priorScaleErrCovIdio = 0.1;  %0.1*(priorShapeErrCovIdio-1) -> negative which can create issues since posterior scale becomes negative and cannot draw from Gamma distribution
 
 
-%% Monte carlo
+%% init simulation
 
 % specs
 totDrawsKeep = 800;  % draws to keep 
@@ -76,7 +75,7 @@ correlTargetObsAndPredComm = [];
 forecastTarget = [];
 
 
-%% posterior
+%% estimation (MCMC -> posterior)
 
 % gibbs sampler
 wait = waitbar(0, 'Gibbs');
@@ -202,6 +201,12 @@ end
 close(wait)
 toc
 
+
+%% results
+
+% get observable target
+obs = yDFM(:,1);
+
 % get summary of posteriors
 target = median(yPredicted,2);  % predicted with common and idio
 
@@ -219,7 +224,6 @@ disp(correlPred)
 correlObs = median(correlTargetObsAndPredComm,1);
 disp(correlObs)
 
-
 % forecast
 forecast = median(forecastTarget,2);
 forecast_bands = prctile(forecastTarget, prct, 2);
@@ -229,18 +233,29 @@ forecastPlot = [NaN(T-1,1); forecast(end-H:end)];
 forecastPlotBands = [NaN(T-1,length(prct)); forecast_bands(end-H:end,:)];
 historyPlot = [target; NaN(H,1)];
 
+% collect quarterly forecast for comparison to ECB
+forecastQ = [];
+forecast_bandsQ = [];
+
+i = 3*2;  % 3 periods per quarter and one lag due to growth
+while i <= T+H  
+    forecastQ = [forecastQ; forecast(i)];   
+    forecast_bandsQ = [forecast_bandsQ; forecast_bands(i,:)];
+    i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
+end
+
 
 %% charts
 
 % plot target along factor in monthly frequency
 figure;
 subplot(2,1,1);
-plot(dates, target, 'b', LineWidth=1.2);
+plot(dates, target, Color=colorDFM, LineWidth=1.2);
 axis tight
 title('Monthly Predicted Real Activity Variable');
 
 subplot(2,1,2);
-plot(dates, factor,'k', LineWidth=1.2);
+plot(dates, factor, Color='k', LineWidth=1.2);
 hold on
 plot(dates,factor_bands(:,[1,end]),':r', LineWidth=0.8);
 hold off
@@ -264,7 +279,7 @@ end
 figure;
 plot(datesQ, commonQ, Color='r', LineWidth=1.5);
 hold on
-plot(datesQ, targetQ, Color='b', LineWidth=1.5)
+plot(datesQ, targetQ, Color=colorDFM, LineWidth=1.5)
 hold off
 axis tight
 legend('predicted with common', 'predicted with common & idiosyncratic')
@@ -273,52 +288,38 @@ title('Quarterly Predicted only with Common Component vs Predicted Real Activity
 
 % plot target in mixed frequency
 figure;
-plot(datesQ, targetQ, 'ro');
+plot(dates, obs, 'Linewidth',2, 'marker','o', 'color','r');
 hold on; 
-plot(dates, target, Color='b', Linewidth=2)
-legend('quarterly predicted', 'monthly predicted')
+plot(dates, target, Color=colorDFM, Linewidth=2)
+legend('quarterly obsverved', 'monthly predicted')
 axis tight
 title('Quarterly vs Monthly Predicted Real Activity Variable');
 
 
 % plot point and density forecast
 figure;
-plot(datesForecast, historyPlot, Color='b', Linewidth=2)
+plot(datesForecast, historyPlot, Color=colorDFM, Linewidth=2)
 hold on;
-plot(datesForecast, forecastPlot, Color='r', Linewidth=1.5, LineStyle='-')
+plot(datesForecast, forecastPlot, Color=colorDFM, Linewidth=1.5, LineStyle='-')
 hold on;
 plot(datesForecast(T:end)' , [forecastPlotBands(T:end,1), forecastPlotBands(T:end,end)],...
-    Color='r', LineWidth=1, LineStyle=':')
+    Color=colorDFM, LineWidth=1, LineStyle=':')
 hFill = [datesForecast(T:end)' fliplr(datesForecast(T:end)')];
 inBetween = [forecastPlotBands(T:end,1)', fliplr(forecastPlotBands(T:end,end)')];
-fill(hFill , inBetween, 'r', FaceAlpha=0.2, LineStyle='none');
+fill(hFill , inBetween, colorDFM, FaceAlpha=0.2, LineStyle='none');
 legend('history', 'point forecast', sprintf('credible bands %d%%',prct(end)))
 axis tight
 grid on
 title('Forecast of Monthly Predicted Real Activity Variable');
-
-
-% get quarterly forecast
-forecastQ = [];
-forecast_bandsQ = [];
-
-i = 3*2;  % 3 periods per quarter and one lag due to growth
-while i <= T+H  
-    forecastQ = [forecastQ; forecast(i)];   
-    forecast_bandsQ = [forecast_bandsQ; forecast_bands(i,:)];
-    i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
-end
-
 
 % ---
 % mismatch in scale for observable and predicted
 figure;
 plot(datesQ, yTargetObs, Color='k', LineWidth=1.5)
 hold on 
-plot(datesQ, yEstimate(nonMissTarget), Color='b', LineWidth=1.5)
+plot(datesQ, yEstimate(nonMissTarget), Color=colorDFM, LineWidth=1.5)
 legend('Quarterly observable target', 'Quarterly predicted target')
 title('Observable vs Predicted')
 
 disp(corr(yTargetObs,yEstimate(nonMissTarget)))
 % ---
-

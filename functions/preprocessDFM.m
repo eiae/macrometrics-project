@@ -1,4 +1,4 @@
-function [yclean] = preprocessDFM(yraw, dates, names, selected, T, N, Q, M)
+function [yclean] = preprocessDFM(yraw, dates, names, selected, T, N, Q, M, color)
 %% Preprocess raw data for modelling
 % inputs
 % - raw dataset
@@ -6,6 +6,7 @@ function [yclean] = preprocessDFM(yraw, dates, names, selected, T, N, Q, M)
 % - period length
 % - total number of variables
 % - number of quarterly and monthly variables
+% - color for charts of model
 % outputs
 % - clean variables after transformations
 % -------------------------------------------------------------------------
@@ -103,7 +104,7 @@ figure;
 for i = 1:Q
     subplot(nrow, ncol, i)  
     
-    plot(datesQ, ycleanQ(:,i),'LineWidth',1.5,'Color',[0.4940 0.1840 0.5560]) 
+    plot(datesQ, ycleanQ(:,i),'LineWidth',1.5,'Color',color) 
     
     title(names{i}, 'FontSize', 10);  
     axis tight
@@ -121,7 +122,7 @@ figure;
 for j = Q+1:N  % start iterator at monthly variables
     subplot(nrow, ncol, j-1)  
     
-    plot(dates, yclean(:,j),'LineWidth',1.5,'Color','r') 
+    plot(dates, yclean(:,j),'LineWidth',1.5,'Color',color) 
     
     title(names{j}, 'FontSize', 10); 
     axis tight
