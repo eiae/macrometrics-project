@@ -1,9 +1,6 @@
 Forecasting analysis:
 - compute rmse of models?
 
-Bayesian analysis:
-- check convergence of MCMC with recursive mean plot
-
 Reporting:
 - Write state-space equations for core model
 - Clean BVAR code

@@ -42,9 +42,7 @@ priorScaleErrCovIdio = 0.1;  %0.1*(priorShapeErrCovIdio-1) -> negative which can
 %% init simulation
 
 % specs
-totDrawsKeep = 800;  % draws to keep 
-totDrawsBurn = 200;  % burn-in
-totDraws = totDrawsKeep + totDrawsBurn; 
+%totDraws = totDrawsKeep + totDrawsBurn; 
 
 % params (starting values)
 % autoregressive coeff of common component (phi1, phi2)
@@ -67,6 +65,10 @@ posterCoeffCommon = zeros(length(coeffCommon), totDrawsKeep);
 posterLoadCommon = zeros(length(loadIdio), totDrawsKeep);
 posterCoeffIdio = zeros(length(coeffIdio), totDrawsKeep);
 posterErrCovIdio = zeros(length(errCovIdio), totDrawsKeep);
+
+factorFiltered = [];
+yPredicted = [];
+yPredictedCommon = [];
 
 correlTargetPredAndPredComm = [];
 correlTargetObsAndPredComm = [];
@@ -155,14 +157,14 @@ for itr = 1:totDraws
         posterErrCovIdio(:, itr-totDrawsBurn) = errCovIdio;
 
         % factor (just common component not all latent)
-        factorFiltered(:, itr-totDrawsBurn) = latentCommon;   
+        factorFiltered = [factorFiltered, latentCommon];   
         %varfact(:,itr-totDrawsBurn) = errCovCommon;
 
         % predicted target (filled using transition equation in ss)
-        yPredicted(:, itr-totDrawsBurn) = yEstimate;
+        yPredicted = [yPredicted, yEstimate];
 
         % predicted target (filled using common part of transition equation in ss)
-        yPredictedCommon(:, itr-totDrawsBurn) = yEstimateCommon;
+        yPredictedCommon = [yPredictedCommon, yEstimateCommon];
 
         % correlation
         correlTargetPredAndPredComm = [correlTargetPredAndPredComm; corr(yEstimate,yEstimateCommon)];
@@ -188,7 +190,7 @@ for itr = 1:totDraws
         
         for h = 2:H+1  
             % transition equation to simulate forecast using VAR(1) dynamics
-            latentForecast(h,:) = transCoeff^h * latentForecast(h-1,:)' + randn(S,1); %.*stdError;  %randn(S,S)*stdError
+            latentForecast(h,:) = transCoeff^h * latentForecast(h-1,:)' + randn(S,S)*stdError; %.*stdError;  %randn(S,S)*stdError
             % measurement equation to map latent and observables
             yForecast(h) =  latentForecast(h,:) * measureCoeff(1,:)';  %measureCoeff(1,1:L)'
         end
@@ -237,11 +239,13 @@ historyPlot = [target; NaN(H,1)];
 datesQ = dates(~isnan(yDFM(:,1)));  % quarterly dates
 targetQ = [];
 commonQ = [];
+obsQ = [];
 
 i = 3*2;  % 3 periods per quarter and one lag due to growth
 while i <= T  
     targetQ = [targetQ; target(i)];  
     commonQ = [commonQ; common(i)];  
+    obsQ = [obsQ; obs(i)];
     i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
 end
 
@@ -249,7 +253,6 @@ end
 forecastQ = [];
 forecast_bandsQ = [];
 
-i = 3*2;  % 3 periods per quarter and one lag due to growth
 while i <= T+H  
     forecastQ = [forecastQ; forecast(i)];   
     forecast_bandsQ = [forecast_bandsQ; forecast_bands(i,:)];
@@ -257,4 +260,28 @@ while i <= T+H
 end
 
 
+% compute recursive mean to check MCMC convergence
 
+% autoregressive coeff in common component (phi1, phi2)
+recurMeanCoeffCommon = zeros(size(posterCoeffCommon,1), totDrawsKeep);
+for j = 1:totDrawsKeep
+    recurMeanCoeffCommon(:,j) = mean(posterCoeffCommon(:,1:j),2);
+end
+
+% loadings in idiosyncratic components (lambda or gamma)
+recurMeanLoadCommon = zeros(size(posterLoadCommon,1), totDrawsKeep);
+for j = 1:totDrawsKeep
+    recurMeanLoadCommon(:,j) = mean(posterLoadCommon(:,1:j),2);
+end
+
+% autoregressive coeff of idiosyncratic component (psi1, psi2)
+recurMeanCoeffIdio = zeros(size(posterCoeffIdio,1), totDrawsKeep);
+for j = 1:totDrawsKeep
+    recurMeanCoeffIdio(:,j) = mean(posterCoeffIdio(:,1:j),2);
+end
+
+% error cov of idiosyncratic component (sigma)
+recurMeanErrCovIdio = zeros(size(posterErrCovIdio,1), totDrawsKeep);
+for j = 1:totDrawsKeep
+    recurMeanErrCovIdio(:,j) = mean(posterErrCovIdio(:,1:j),2);
+end

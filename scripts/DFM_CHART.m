@@ -76,3 +76,101 @@ saveas(gcf, fullfile(savepath,'DFM_forecast.png'));
 % title('Observable vs Predicted')
 % 
 % disp(corr(yTargetObs,yEstimate(nonMissTarget)))
+
+
+% plot MCMC convergence of model parameters
+nrow = ceil(sqrt(size(posterCoeffCommon,1)));
+ncol = ceil(size(posterCoeffCommon,1) / nrow);
+figure;
+for i = 1:size(posterCoeffCommon,1)
+    subplot(nrow, ncol, i)  
+    
+    plot(recurMeanCoeffCommon(i,:),'LineWidth',1.5,'Color',colorDFM) 
+
+    ylabel('recursive mean')
+    xlabel('iterations')
+    
+    title(sprintf('phi %d', i), 'FontSize', 8);  
+    axis tight
+    grid on
+    set(gca,'FontSize',8)
+end
+sgt = sgtitle('MCMC convergence of autoregressive coefficients in common component: $\phi$', 'Interpreter','latex');
+sgt.FontSize = 12;
+saveas(gcf, fullfile(savepath,'mcmc_convergence_common_coeff.png')); 
+
+
+nrow = ceil(sqrt(size(posterLoadCommon,1)));
+ncol = ceil(size(posterLoadCommon,1) / nrow);
+figure;
+for i = 1:size(posterLoadCommon,1)
+    subplot(nrow, ncol, i)  
+    
+    plot(recurMeanLoadCommon(i,:),'LineWidth',1.5,'Color',colorDFM) 
+
+    ylabel('recursive mean')
+    xlabel('iterations')
+    
+    title(sprintf('gamma %s,%d', names{i}), 'FontSize', 8);  
+    axis tight
+    grid on
+    set(gca,'FontSize',8)
+end
+sgt = sgtitle('MCMC convergence of loadings: $\gamma_i$', 'Interpreter','latex');
+sgt.FontSize = 12;
+saveas(gcf, fullfile(savepath,'mcmc_convergence_load.png')); 
+
+
+nrow = ceil(sqrt(size(posterCoeffIdio,1)));
+ncol = ceil(size(posterCoeffIdio,1) / nrow);
+namesVar = {};
+for i = 1:numel(names)
+    namesVar = [namesVar, repmat(names(i), 1, AR)]; % reapeat as many lags
+end
+
+figure;
+for i = 1:size(posterCoeffIdio,1)
+    subplot(nrow, ncol, i)  
+    
+    plot(recurMeanCoeffIdio(i,:),'LineWidth',1.5,'Color',colorDFM) 
+
+    ylabel('recursive mean')
+    xlabel('iterations')
+    
+    if mod(i, 2) == 1
+        labelAR = 1;  % if iterator odd 
+        labelVar = i;
+    else 
+        labelAR = 2;
+        labelVar = i-1;
+    end
+    
+    title(sprintf('psi %s, %d', namesVar{labelVar}, labelAR), 'FontSize', 8);  
+    axis tight
+    grid on
+    set(gca,'FontSize',8)
+end
+sgt = sgtitle('MCMC convergence of autoregressive coefficients in idios. components: $\psi_i$', 'Interpreter','latex');
+sgt.FontSize = 12;
+saveas(gcf, fullfile(savepath,'mcmc_convergence_idio_coeff.png')); 
+
+
+nrow = ceil(sqrt(size(posterErrCovIdio,1)));
+ncol = ceil(size(posterErrCovIdio,1) / nrow);
+figure;
+for i = 1:size(posterErrCovIdio,1)
+    subplot(nrow, ncol, i)  
+    
+    plot(recurMeanErrCovIdio(i,:),'LineWidth',1.5,'Color',colorDFM) 
+
+    ylabel('recursive mean')
+    xlabel('iterations')
+    
+    title(sprintf('sigma %s', names{i}), 'FontSize', 8);  
+    axis tight
+    grid on
+    set(gca,'FontSize',8)
+end
+sgt = sgtitle('MCMC convergence of error variance in idios. components: $\sigma^2_i$', 'Interpreter','latex');
+sgt.FontSize = 12;
+saveas(gcf, fullfile(savepath,'mcmc_convergence_idio_error_cov.png')); 

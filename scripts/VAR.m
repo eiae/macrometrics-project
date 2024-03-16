@@ -8,12 +8,14 @@
 clc
  
 % model specs
-lags = 2;  % number of lags
+lags = AR;  % number of lags
 options.mf_varindex = 1;  % position of target variable
-options.K = 1000;  % total iterations
 options.priors.name = 'Minnesota';  % prior type with standard hyperparams
-options.fhor = H; 
+options.fhor = H; % horizon to forecast
 options.noprint = 1;
+%totDraws = totDrawsKeep + totDrawsBurn; 
+options.K = totDraws;  % total iterations
+
 
 % given we are working with level data the M2Q match is
 % Yq(t) = 1/3*Ym(t) + 1/3*Ym(t-1) + 1/3*Ym(t-2)
@@ -25,21 +27,24 @@ L = length(m2q);  % length of m2q conversion (additional lags from mapping)
 
 % gibbs sampler
 bvarmf = bvar_(yVAR, lags, options); 
-drawKeep = options.K - 200;
 
 % collect objects of interest
+posterCoeff = bvarmf.Phi_draws(:,:,end-totDrawsKeep+1:end);  % autoregressive coeff (Phi)
+posterErrCov = bvarmf.Sigma_draws(:,:,end-totDrawsKeep+1:end);  % error cov (Sigma)
+
 yPredictedTemp = sort(bvarmf.yfill, 3);  % sort predicted endog vector
-yPredictedLvl = squeeze(yPredictedTemp(:,1,end-drawKeep+1:end));  % select target variable 
-forecastTemp = squeeze(bvarmf.forecasts.with_shocks(:,1,end-drawKeep+1:end));
-forecastTargetLvl = [yPredictedLvl; forecastTemp];
+yPredictedLvl = squeeze(yPredictedTemp(:,1,end-totDrawsKeep+1:end));  % select target variable 
+
+forecastTemp = squeeze(bvarmf.forecasts.with_shocks(:,1,end-totDrawsKeep+1:end));
+forecastTargetLvl = [yPredictedLvl; forecastTemp];  % join history and forecast
 
 
 %% results
 
 % get observable target and transform to growth rates
 obsAlt = [NaN(L,1); 100*( yVAR(L+1:end,1) - yVAR(1:end-L,1) )];  % quarter-on-quarter growth rates based on monthly series of quartely data
-yPredictedAlt = [NaN(L,drawKeep); 100*( yPredictedLvl(L+1:end,:) - yPredictedLvl(1:end-L,:) )];  % add NaN to match sizes (since lose obs equal to frequency-relation length, M2Q = 3)
-forecastTargetAlt = [NaN(L,drawKeep); 100*( forecastTargetLvl(L+1:end,:) - forecastTargetLvl(1:end-L,:) )];  
+yPredictedAlt = [NaN(L,totDrawsKeep); 100*( yPredictedLvl(L+1:end,:) - yPredictedLvl(1:end-L,:) )];  % add NaN to match sizes (since lose obs equal to frequency-relation length, M2Q = 3)
+forecastTargetAlt = [NaN(L,totDrawsKeep); 100*( forecastTargetLvl(L+1:end,:) - forecastTargetLvl(1:end-L,:) )];  
 
 % get summary of posteriors
 targetAlt = median(yPredictedAlt, 2); 
@@ -58,6 +63,18 @@ historyPlotAlt = [targetAlt; NaN(H,1)];
 obsAltLvl = yVAR(:,1);
 targetAltLvl = median(yPredictedLvl, 2); 
 
+% collect quarterly predicted for comparison with target
+targetAltQ = [];
+obsAltQ = [];
+
+i = 3*2;  % 3 periods per quarter and one lag due to growth
+while i <= T
+    targetAltQ = [targetAltQ; targetAlt(i)];
+    obsAltQ = [obsAltQ; obsAlt(i)];
+    i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
+end
+
+
 % collect quarterly forecast for comparison to ECB
 forecastAltQ = [];
 forecast_bandsAltQ = [];
@@ -69,3 +86,21 @@ while i <= T+H
     i = i+3;  % take only 1 in 3 values (3 month = 1 quarter)
 end
 
+
+% compute recursive mean to check MCMC convergence
+
+% autoregressive coeff (Phi)
+recurMeanCoeff = zeros(size(posterCoeff,1), N, totDrawsKeep);
+for i = 1:N
+    for j = 1:totDrawsKeep
+        recurMeanCoeff(:,i,j) = mean(posterCoeff(:,i,1:j),3);
+    end
+end
+
+% error cov (Sigma)
+recurMeanErrCov = zeros(size(posterErrCov,1), N, totDrawsKeep);
+for i = 1:N
+    for j = 1:totDrawsKeep
+        recurMeanErrCov(:,i,j) = mean(posterErrCov(:,i,1:j),3);
+    end
+end
