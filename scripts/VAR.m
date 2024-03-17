@@ -4,9 +4,7 @@
 % by Filippo Ferroni and Fabio Canova
 % https://github.com/naffe15/BVAR_/tree/master
 
-% clear
-clc
- 
+
 % model specs
 lags = AR;  % number of lags
 options.mf_varindex = 1;  % position of target variable

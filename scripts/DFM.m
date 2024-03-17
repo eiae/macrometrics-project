@@ -3,8 +3,6 @@
 % Disclaimer: code adapted from class which is based on routines written
 % by Gabriel Pérez-Quirós and Danilo Leiva-León
 
-% clear
-clc
 
 % data transformations for model
 yMean = nanmean(yDFM)';  % compute stats to add moments back after computing factor
@@ -253,6 +251,7 @@ end
 forecastQ = [];
 forecast_bandsQ = [];
 
+i = 3*2;  % 3 periods per quarter and one lag due to growth
 while i <= T+H  
     forecastQ = [forecastQ; forecast(i)];   
     forecast_bandsQ = [forecast_bandsQ; forecast_bands(i,:)];
