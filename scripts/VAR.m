@@ -17,8 +17,8 @@ options.K = totDraws;  % total iterations
 
 % given we are working with level data the M2Q match is
 % Yq(t) = 1/3*Ym(t) + 1/3*Ym(t-1) + 1/3*Ym(t-2)
-m2q = [(1/3);(1/3);(1/3)];  % month-to-quarter conversion
-L = length(m2q);  % length of m2q conversion (additional lags from mapping) 
+m2qAlt = [(1/3);(1/3);(1/3)];  % month-to-quarter conversion
+LAlt = length(m2qAlt);  % length of m2q conversion (additional lags from mapping) 
 
 
 %% estimation (MCMC -> posterior)
@@ -40,9 +40,9 @@ forecastTargetLvl = [yPredictedLvl; forecastTemp];  % join history and forecast
 %% results
 
 % get observable target and transform to growth rates
-obsAlt = [NaN(L,1); 100*( yVAR(L+1:end,1) - yVAR(1:end-L,1) )];  % quarter-on-quarter growth rates based on monthly series of quartely data
-yPredictedAlt = [NaN(L,totDrawsKeep); 100*( yPredictedLvl(L+1:end,:) - yPredictedLvl(1:end-L,:) )];  % add NaN to match sizes (since lose obs equal to frequency-relation length, M2Q = 3)
-forecastTargetAlt = [NaN(L,totDrawsKeep); 100*( forecastTargetLvl(L+1:end,:) - forecastTargetLvl(1:end-L,:) )];  
+obsAlt = [NaN(LAlt,1); 100*( yVAR(LAlt+1:end,1) - yVAR(1:end-LAlt,1) )];  % quarter-on-quarter growth rates based on monthly series of quartely data
+yPredictedAlt = [NaN(LAlt,totDrawsKeep); 100*( yPredictedLvl(LAlt+1:end,:) - yPredictedLvl(1:end-LAlt,:) )];  % add NaN to match sizes (since lose obs equal to frequency-relation length, M2Q = 3)
+forecastTargetAlt = [NaN(LAlt,totDrawsKeep); 100*( forecastTargetLvl(LAlt+1:end,:) - forecastTargetLvl(1:end-LAlt,:) )];  
 
 % get summary of posteriors
 targetAlt = median(yPredictedAlt, 2); 

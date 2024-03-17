@@ -1,6 +1,6 @@
 - Compute correlation between predicted target from common vs from common + idio? If yes, do it at monthly or quarterly? If not, is it predicted target from common and GDP at quarterly?
-
 - What dynamic structure to use to forecast with DFM? Use State-space equations (both transition to forecast and measurement to map)? Which standard error to simulate the economy?
+- Given we are using MF with the target variable as regressor, it only makes sense to compute RMSE (forecast vs actual of target at quarterly) for the periods of the forecast horizons (not in-sample since the data will be matched)
 
 
 

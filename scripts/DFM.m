@@ -53,7 +53,7 @@ errCovCommon = 1;  % normalized to one
 loadIdio = [ones(Q,1); 0.1*ones(M,1)];  % (first for quarterly, then for monthly)
 
 % autoregressive coeff of idiosyncratic component (psi1, psi2)
-coeffIdio = [0.2*ones(Q*AR,1); 0.2*ones(M*AR,1)];
+coeffIdio = [0.2*ones(Q*AR,1)*0; 0.2*ones(M*AR,1)];  % multiply by zero since low frequency variable has no idiosyncratic component
 
 % error cov of idiosyncratic component (sigma)
 errCovIdio = 0.1*ones(Q+M,1);
