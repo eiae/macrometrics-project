@@ -181,7 +181,7 @@ for itr = 1:totDraws
         % yForecast(h) = [1 yForecast(h-1) yForecast(h-2)]*B + (randn(1,1)*cfactor);
         
         %stdError = sqrt(diag(transCov));  % standard deviation of the error cov in transition equation
-
+        %latentForecast(h,:) = transCoeff * latentForecast(h-1,:)' + stdError*randn(M,1); %randn(S,S)*stdError; %.*stdError;  
         
         % preallocate
         yForecast = zeros(H+1,1);  % create new forecast each iteration
@@ -213,25 +213,72 @@ for itr = 1:totDraws
             latentForecastRed(h,:) = transCoeffRed * latentForecastRed(h-1,:)' + transStdRed*randn(sizePick,1);
             
             % reconstruct latent vector with original size
-            if h == 2
+            if h==2
                 latentForecast(h,pick) = latentForecastRed(h,:);
                 latentForecast(h,pickAlt) = latentForecastInit(:,pickAlt);
             elseif h==3
                 latentForecast(h,pick) = latentForecastRed(h,:);
-                latentForecast(h,pickAlt) = latentForecastInit(:,pickAlt);
-            elseif h==4
-                ...
-            elseif h==5
-                ...
-            elseif h==6
-                ...
-            end
 
-            %latentForecast(h,:) = transCoeff * latentForecast(h-1,:)' + stdError*randn(M,1); %randn(S,S)*stdError; %.*stdError;  
+                pickPrev = [2,7,12,14,16,18];             
+                latentForecast(h,pickPrev) = latentForecastRed(h-1,:);
+
+                pickAlt = [3,4,5,8,9,10];
+                latentForecast(h,pickAlt) = latentForecastInit(pickAlt-2);
+                 % latentForecast(h,3) = latentForecastInit(1);
+                 % latentForecast(h,4) = latentForecastInit(2);
+                 % latentForecast(h,5) = latentForecastInit(3);
+                 % latentForecast(h,8) = latentForecastInit(6);
+                 % latentForecast(h,9) = latentForecastInit(7);
+                 % latentForecast(h,10) = latentForecastInit(8);
+            elseif h==4
+                latentForecast(h,pick) = latentForecastRed(h,:);
+                
+                pickPrev = [2,7,12,14,16,18]; 
+                latentForecast(h,pickPrev) = latentForecastRed(h-1,:);
+
+                pickPrev2 = [3,8]; 
+                latentForecast(h,pickPrev2) = latentForecastRed(h-2,pickPrev2-2);
+
+                pickAlt = [4,5,9,10];
+                latentForecast(h,pickAlt) = latentForecastInit(pickAlt-3);
+
+            elseif h==5
+                latentForecast(h,pick) = latentForecastRed(h,:);
+
+                pickPrev = [2,7,12,14,16,18]; 
+                latentForecast(h,pickPrev) = latentForecastRed(h-1,:);
+
+                pickPrev2 = [3,8]; 
+                latentForecast(h,pickPrev2) = latentForecastRed(h-2,pickPrev2-2);
+
+                pickPrev3 = [4,9]; 
+                latentForecast(h,pickPrev3) = latentForecastRed(h-3,pickPrev3-3);
+
+                pickAlt = [5,10];
+                latentForecast(h,pickAlt) = latentForecastInit(pickAlt-4);
+                
+
+            else
+                latentForecast(h,pick) = latentForecastRed(h,:);
+
+                pickPrev = [2,7,12,14,16,18]; 
+                latentForecast(h,pickPrev) = latentForecastRed(h-1,:);
+
+                pickPrev2 = [3,8]; 
+                latentForecast(h,pickPrev2) = latentForecastRed(h-2,pickPrev2-2);
+
+                pickPrev3 = [4,9]; 
+                latentForecast(h,pickPrev3) = latentForecastRed(h-3,pickPrev3-3);
+
+                pickPrev4 = [5,10]; 
+                latentForecast(h,pickPrev4) = latentForecastRed(h-4,pickPrev4-4);
+            end
             
             % measurement equation to map latent and observables
-            yForecast(h) =  latentForecast(h,:) * measureCoeff(1,:)';  % measureCoeff(1,1:L)'
+            yForecast(h) =  latentForecast(h,:) * measureCoeff';  % measureCoeff(1,1:L)'
+        
         end
+
         yForecastTarget = yForecast(:,1);
         forecastTarget = [forecastTarget, [yEstimate; yForecastTarget(2:end)]];  % concatenate history with forecast (taking into account initial values taken last observation depending on number of lags)
     end
