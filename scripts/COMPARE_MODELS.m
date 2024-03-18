@@ -12,17 +12,19 @@ clc
 % RMSE values along forecast window
 figure;
 subplot(2,1,1)
-plot(RmseDFM, Color=colorDFM, LineWidth=1.5)
+plot(Rmsedates, RmseDFM, Color=colorDFM, LineWidth=1.5)
 xlabel('forecast window')
 ylabel('RMSE')
 grid on
+axis tight
 title('RMSE DFM')
 
 subplot(2,1,2)
-plot(RmseVAR, Color=colorVAR, LineWidth=1.5)
+plot(RmsedatesAlt, RmseVAR, Color=colorVAR, LineWidth=1.5)
 xlabel('forecast window')
 ylabel('RMSE')
 grid on
+axis tight
 title('RMSE VAR')
 sgt = sgtitle('RMSE values for each forecast iteration', 'Interpreter','latex');
 sgt.FontSize = 12;

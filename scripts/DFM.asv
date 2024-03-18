@@ -220,17 +220,20 @@ for itr = 1:totDraws
                 latentForecast(h,pick) = latentForecastRed(h,:);
                 latentForecast(h,pickAlt) = latentForecastInit(:,pickAlt);
             elseif h==4
-                ...
+                                latentForecast(h,pick) = latentForecastRed(h,:);
+                latentForecast(h,pickAlt) = latentForecastInit(:,pickAlt);
+
             elseif h==5
-                ...
+            
+            
             elseif h==6
-                ...
+    
             end
 
             %latentForecast(h,:) = transCoeff * latentForecast(h-1,:)' + stdError*randn(M,1); %randn(S,S)*stdError; %.*stdError;  
             
             % measurement equation to map latent and observables
-            yForecast(h) =  latentForecast(h,:) * measureCoeff(1,:)';  % measureCoeff(1,1:L)'
+            yForecast(h) =  latentForecast(h,:) * measureCoeff(1,:)';  %measureCoeff(1,1:L)'
         end
         yForecastTarget = yForecast(:,1);
         forecastTarget = [forecastTarget, [yEstimate; yForecastTarget(2:end)]];  % concatenate history with forecast (taking into account initial values taken last observation depending on number of lags)

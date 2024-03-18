@@ -1,4 +1,4 @@
-%% forecast exercise for DFM
+%% Forecast exercise for DFM
 
 % Disclaimer: code written
 % by Erik Andres Escayola
@@ -8,10 +8,13 @@
 
 % preallocate
 RmseDFM = zeros(forecastPeriods, 1);
+Rmsedates = [];
 
 % preprocess data and get actual with full sample
 yDFMFull = preprocessDFM(yraw,selected,Tfull,N,Q);
 obsFull = yDFMFull(:,1);
+
+datesfullQ = datesfull(~isnan(obsFull)); 
 obsFullQ = [];
 
 i = 3*2;  % 3 periods per quarter and one lag due to growth
@@ -53,9 +56,9 @@ for window = minWindow:3:Tfull-H
     %RMSE= sqrt(mean(error.^2))
     RmseValueDFM = rmse(actualValueDFM, forecastValueDFM);
 
-    
     % store rmse value
     RmseDFM(counter) = RmseValueDFM;
+    Rmsedates = [Rmsedates; datesfullQ(backShift)];
 
     counter = counter + 1;
 end

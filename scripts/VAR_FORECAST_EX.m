@@ -1,4 +1,4 @@
-%% forecast exercise for VAR
+%% Forecast exercise for VAR
 
 % Disclaimer: code written
 % by Erik Andres Escayola
@@ -8,10 +8,13 @@
 
 % preallocate
 RmseVAR = zeros(forecastPeriods, 1);
+RmsedatesAlt = [];
 
 % preprocess data and get actual with full sample
 yVARFull = preprocessVAR(yraw,selected,Tfull,N,Q);
 obsAltFull = [NaN(LAlt,1); 100*( yVARFull(LAlt+1:end,1) - yVARFull(1:end-LAlt,1) )];  % quarter-on-quarter growth rates based on monthly series of quartely data
+
+datesfullAltQ = datesfull(~isnan(obsAltFull)); 
 obsAltFullQ = [];
 
 i = 3*2;  % 3 periods per quarter and one lag due to growth
@@ -56,6 +59,7 @@ for window = minWindow:3:Tfull-H
     
     % store rmse value
     RmseVAR(counter) = RmseValueVAR;
+    RmsedatesAlt = [RmsedatesAlt; datesfullAltQ(backShiftAlt)];
 
     counter = counter + 1;
 end
