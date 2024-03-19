@@ -173,24 +173,15 @@ for itr = 1:totDraws
         correlTargetObsAndPredComm = [correlTargetObsAndPredComm; corr(yTargetObs,yEstimateCommonQ)];
 
         % forecast
-        
-        %yForecast(1:AR) = yEstimate(end-AR+1:end); % starting values for forecast based on AR lags 
-        %B = [1; 0.3; 0.1];  % random walk process with 2 lags
-        %cfactor = 1;  % sqrt(sigma2);  % standard deviation of the error cov
-        % in the loop:
-        % yForecast(h) = [1 yForecast(h-1) yForecast(h-2)]*B + (randn(1,1)*cfactor);
-        
-        %stdError = sqrt(diag(transCov));  % standard deviation of the error cov in transition equation
-        %latentForecast(h,:) = transCoeff * latentForecast(h-1,:)' + stdError*randn(M,1); %randn(S,S)*stdError; %.*stdError;  
-        
+
         % preallocate
         yForecast = zeros(H+1,1);  % create new forecast each iteration
-        yForecast(1) = yEstimate(end);
+        yForecast(1) = yEstimate(end);  % due to companion VAR(1) dynamics need to initialize forecast with last estimate (yet will only keep t+1 -> t+H+1 elements)
         
-        latentForecastInit = latent(end,:);
+        latentForecastInit = latent(end,:);  % save last draw of latent vector for transition equation forecast
         
-        latentForecast = zeros(H+1,S);
-        latentForecast(1,:) = latentForecastInit;
+        latentForecast = zeros(H+1,S);  % create new forecast each iteration
+        latentForecast(1,:) = latentForecastInit;  % due to companion VAR(1) dynamics need to initialize forecast with last estimate (yet will only keep t+1 -> t+H+1 elements)
 
         % define reduced matrices for simulation (avoid sparse transition covariance - Kim-Nelson section 8.2)
         pick = [1, L+1:L:L+L*Q, L+L*Q+1:AR:L+L*Q+AR*M];  %[1,6,11,13,15,17] for 5 variables (1Q, 4M)
@@ -198,84 +189,114 @@ for itr = 1:totDraws
 
         pickAll = 1:S;
         checkPick = ~ismember(pickAll, pick);
-        pickAlt = pickAll(checkPick);
+        pickAlt = pickAll(checkPick);  % complement of the picker
+        
+        % first reduce dimensionality of transition equation for simulation 
+        % then recover original size of objects (dynamically)
 
-        transCovRed = transCov(pick,pick);
-        transStdRed = chol(transCovRed)';
+        % compute standard error of the shock to simulate the economy
+        transCovRed = transCov(pick,pick);  % reduced transition equation error covariance to avoid sparse matrix
+        transStdRed = chol(transCovRed)';  % take cholesky as to get a measure of standard error
 
+        % define reduced transition coeff matrix
         transCoeffRed = transCoeff(pick,pick);
 
+        % define reduced latent vector
         latentForecastRed = zeros(H+1,sizePick);
-        latentForecastRed(1,:) = latentForecastRedInit(pick);
+        latentForecastRed(1,:) = latentForecastInit(pick);  % due to companion VAR(1) dynamics need to initialize forecast with last estimate (yet will only keep t+1 -> t+H+1 elements)
 
+        % forecast by simulating the economy on the reduced transition
+        % equation (contains all dynamics), then recover original size of
+        % objects, finally match latent with observables in measurement
+        % equation
         for h = 2:H+1  
-            % reduced transition equation to simulate forecast using VAR(1) dynamics
-            latentForecastRed(h,:) = transCoeffRed * latentForecastRed(h-1,:)' + transStdRed*randn(sizePick,1);
+            % reduced transition equation to simulate forecast using companion VAR(1) dynamics
+            latentForecastRed(h,:) = transCoeffRed * latentForecastRed(h-1,:)' + transStdRed*randn(sizePick,1);  % error/shock is a standard random normal with covariance matrix equal the transition error covariance
             
-            % reconstruct latent vector with original size
+            % reconstruct latent vector with original size:
+            % we have 5 cases due to the m2q mapping which contains the 
+            % current month + four lags of the months to reconstruc the 
+            % quarter. Yet, in each of the first 5 horizons there is a 
+            % dynamic combination between previous forecasts and initial 
+            % forecast based on last draw of the latent vector
             if h==2
-                latentForecast(h,pick) = latentForecastRed(h,:);
-                latentForecast(h,pickAlt) = latentForecastInit(:,pickAlt);
-            elseif h==3
-                latentForecast(h,pick) = latentForecastRed(h,:);
-
-                pickPrev = [2,7,12,14,16,18];             
-                latentForecast(h,pickPrev) = latentForecastRed(h-1,:);
-
-                pickAlt = [3,4,5,8,9,10];
-                latentForecast(h,pickAlt) = latentForecastInit(pickAlt-2);
-                 % latentForecast(h,3) = latentForecastInit(1);
-                 % latentForecast(h,4) = latentForecastInit(2);
-                 % latentForecast(h,5) = latentForecastInit(3);
-                 % latentForecast(h,8) = latentForecastInit(6);
-                 % latentForecast(h,9) = latentForecastInit(7);
-                 % latentForecast(h,10) = latentForecastInit(8);
-            elseif h==4
+                % update subset of elements with current forecast
                 latentForecast(h,pick) = latentForecastRed(h,:);
                 
-                pickPrev = [2,7,12,14,16,18]; 
+                % update subset of elements with initial forecast
+                latentForecast(h,pickAlt) = latentForecastInit(pickAlt);
+            
+            elseif h==3
+                % update subset of elements with current forecast
+                latentForecast(h,pick) = latentForecastRed(h,:);
+                
+                % update subset of elements with 1-horizon previous forecast
+                pickPrev = [L-3, L+L*Q-3, (L+L*Q+1+AR-1):AR:(L+L*Q+AR*M)];   %[2,7,12,14,16,18] for 5 variables (1Q, 4M)
+                latentForecast(h,pickPrev) = latentForecastRed(h-1,:);  % note that the reduced has already the correct picked positions ([1,6,11,13,15,17])
+               
+                % update subset of elements with initial forecast
+                pickAlt = [L-2:L, L+L*Q-2:L+L*Q];  % here not automatized for Q>1  %[3,4,5,8,9,10] for 5 variables (1Q, 4M)
+                latentForecast(h,pickAlt) = latentForecastInit(pickAlt-2);
+
+            elseif h==4
+                % update subset of elements with current forecast
+                latentForecast(h,pick) = latentForecastRed(h,:);        
+                
+                % update subset of elements with 1-horizon previous forecast
+                pickPrev = [L-3, L+L*Q-3, (L+L*Q+1+AR-1):AR:(L+L*Q+AR*M)];  
                 latentForecast(h,pickPrev) = latentForecastRed(h-1,:);
-
-                pickPrev2 = [3,8]; 
-                latentForecast(h,pickPrev2) = latentForecastRed(h-2,pickPrev2-2);
-
-                pickAlt = [4,5,9,10];
+                
+                % update subset of elements with 2-horizons previous forecast
+                pickPrev2 = [L-2, L+L*Q-2];  % here not automatized for Q>1  %[3,8] for 5 variables (1Q, 4M)
+                latentForecast(h,pickPrev2) = latentForecastRed(h-2, pickPrev2-2);
+                
+                % update subset of elements with initial forecast
+                pickAlt = [L-1:L, L+L*Q-1:L+L*Q];  % here not automatized for Q>1  %[4,5,9,10] for 5 variables (1Q, 4M)
                 latentForecast(h,pickAlt) = latentForecastInit(pickAlt-3);
 
             elseif h==5
+                % update subset of elements with current forecast
                 latentForecast(h,pick) = latentForecastRed(h,:);
-
-                pickPrev = [2,7,12,14,16,18]; 
-                latentForecast(h,pickPrev) = latentForecastRed(h-1,:);
-
-                pickPrev2 = [3,8]; 
-                latentForecast(h,pickPrev2) = latentForecastRed(h-2,pickPrev2-2);
-
-                pickPrev3 = [4,9]; 
-                latentForecast(h,pickPrev3) = latentForecastRed(h-3,pickPrev3-3);
-
-                pickAlt = [5,10];
-                latentForecast(h,pickAlt) = latentForecastInit(pickAlt-4);
                 
+                % update subset of elements with 1-horizon previous forecast
+                pickPrev = [L-3, L+L*Q-3, (L+L*Q+1+AR-1):AR:(L+L*Q+AR*M)];  %[2,7,12,14,16,18] for 5 variables (1Q, 4M)
+                latentForecast(h,pickPrev) = latentForecastRed(h-1,:);
+                
+                % update subset of elements with 2-horizons previous forecast
+                pickPrev2 = [L-2, L+L*Q-2];  % here not automatized for Q>1  %[3,8] for 5 variables (1Q, 4M)
+                latentForecast(h,pickPrev2) = latentForecastRed(h-2,pickPrev2-2);
+                
+                % update subset of elements with 3-horizons previous forecast    
+                pickPrev3 = [L-1, L+L*Q-1];  % here not automatized for Q>1  %[4,9] for 5 variables (1Q, 4M)
+                latentForecast(h,pickPrev3) = latentForecastRed(h-3,pickPrev3-3);
+                
+                % update subset of elements with initial forecast
+                pickAlt = [L, L+L*Q];  % here not automatized for Q>1  %[5,10]for 5 variables (1Q, 4M)
+                latentForecast(h,pickAlt) = latentForecastInit(pickAlt-4);  
 
             else
+                % update subset of elements with current forecast
                 latentForecast(h,pick) = latentForecastRed(h,:);
-
-                pickPrev = [2,7,12,14,16,18]; 
+                
+                % update subset of elements with 1-horizon previous forecast
+                pickPrev = [L-3, L+L*Q-3, (L+L*Q+1+AR-1):AR:(L+L*Q+AR*M)];  %[2,7,12,14,16,18] for 5 variables (1Q, 4M)
                 latentForecast(h,pickPrev) = latentForecastRed(h-1,:);
-
-                pickPrev2 = [3,8]; 
+                
+                % update subset of elements with 2-horizons previous forecast
+                pickPrev2 = [L-2, L+L*Q-2];  % here not automatized for Q>1  %[3,8] for 5 variables (1Q, 4M)
                 latentForecast(h,pickPrev2) = latentForecastRed(h-2,pickPrev2-2);
-
-                pickPrev3 = [4,9]; 
+                
+                % update subset of elements with 3-horizons previous forecast
+                pickPrev3 = [L-1, L+L*Q-1];  % here not automatized for Q>1  %[4,9] for 5 variables (1Q, 4M)
                 latentForecast(h,pickPrev3) = latentForecastRed(h-3,pickPrev3-3);
-
-                pickPrev4 = [5,10]; 
+                
+                % update subset of elements with 4-horizons previous forecast
+                pickPrev4 = [L, L+L*Q];  % here not automatized for Q>1  %[5,10]for 5 variables (1Q, 4M)
                 latentForecast(h,pickPrev4) = latentForecastRed(h-4,pickPrev4-4);
             end
             
             % measurement equation to map latent and observables
-            yForecast(h) =  latentForecast(h,:) * measureCoeff';  % measureCoeff(1,1:L)'
+            yForecast(h) =  latentForecast(h,:) * measureCoeff(1,:)';  % only match target variable  % measureCoeff(1,1:L)'
         
         end
 

@@ -43,7 +43,9 @@ for window = minWindow:3:Tfull-H
     %run(fullfile(workpath,'VAR_CHART.m'))  % uncomment to check estimation results in each forecast
 
     % compare forecast with actual data
-    %actualValueVAR = obsAltFullQ(end-forecastPeriodsBackQ+1:end-forecastPeriodsBackQ+HQ);
+        % given we are using MF with the target variable as regressor, 
+    % it only makes sense to compute RMSE for the periods of the forecast 
+    % horizons (not in-sample since the data will be matched)
     backShiftAlt = length(forecastAltQ(1:end-HQ));
     actualValueVAR = obsAltFullQ(backShiftAlt+1:backShiftAlt+HQ);
     forecastValueVAR = forecastAltQ(end-HQ+1:end);

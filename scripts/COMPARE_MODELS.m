@@ -17,7 +17,7 @@ xlabel('forecast window')
 ylabel('RMSE')
 grid on
 axis tight
-title('RMSE DFM')
+title('DFM RMSE')
 
 subplot(2,1,2)
 plot(RmsedatesAlt, RmseVAR, Color=colorVAR, LineWidth=1.5)
@@ -25,7 +25,7 @@ xlabel('forecast window')
 ylabel('RMSE')
 grid on
 axis tight
-title('RMSE VAR')
+title('VAR RMSE')
 sgt = sgtitle('RMSE values for each forecast iteration', 'Interpreter','latex');
 sgt.FontSize = 12;
 saveas(gcf, fullfile(savepath,'RMSE_values.png')); 
@@ -34,15 +34,15 @@ saveas(gcf, fullfile(savepath,'RMSE_values.png'));
 figure;
 subplot(2,1,1)
 plot(xiRmseDFM, fRmseDFM, Color=colorDFM, LineWidth=1.5)
-xlabel('forecast window')
-ylabel('RMSE')
-title('RMSE DFM')
+xlabel('RMSE')
+ylabel('density')
+title('DFM RMSE kernel')
 
 subplot(2,1,2)
 plot(xiRmseVAR, fRmseVAR, Color=colorVAR, LineWidth=1.5)
-xlabel('forecast window')
-ylabel('RMSE')
-title('RMSE VAR')
+xlabel('RMSE')
+ylabel('density')
+title('VAR RMSE kernel')
 sgt = sgtitle('RMSE kernels for total forecast iterations', 'Interpreter','latex');
 sgt.FontSize = 12;
 saveas(gcf, fullfile(savepath,'RMSE_kernel.png')); 

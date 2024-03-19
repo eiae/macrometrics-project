@@ -8,11 +8,18 @@
 % model specs
 lags = AR;  % number of lags
 options.mf_varindex = 1;  % position of target variable
-options.priors.name = 'Minnesota';  % prior type with standard hyperparams
+options.priors.name = 'Minnesota';  % Minnesota is a conjutgate MN-IW prior with specific structure 
+
+% Minnesota shrinkage hyperparam for covariance of coefficients
+options.minn_prior_tau = 3;  % overall tightness
+options.minn_prior_decay = 0.5;  % tightness on the lags greater than one
+options.minn_prior_lambda = 5;  % sum-of-coefficient
+options.minn_prior_mu = 2;  % co-persistence
+options.minn_prior_omega = 2; % covariance matrix
+
 options.fhor = H; % horizon to forecast
-options.noprint = 1;
-%totDraws = totDrawsKeep + totDrawsBurn; 
 options.K = totDraws;  % total iterations
+options.noprint = 1;
 
 
 % given we are working with level data the M2Q match is

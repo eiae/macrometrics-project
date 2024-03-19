@@ -1,4 +1,0 @@
-Reporting:
-- Write state-space equations for core model
-
-
