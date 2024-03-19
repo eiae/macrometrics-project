@@ -45,7 +45,6 @@ transCoeffRed = transCoeff(pick,:);  % select all columns to have all AR dynamic
 % equation
 for h = 2:H+1  
     % reduced transition equation to simulate forecast using companion VAR(1) dynamics
-    %latentForecastRed(h,pick) = transCoeffRed * latentForecastRed(h-1,:)' + transStdRed*randn(sizePick,1);  % error/shock is a standard random normal with covariance matrix equal the transition error covariance
     latentForecast(h,pick) = transCoeffRed * latentForecast(h-1,:)' + transStdRed*randn(sizePick,1);  % error/shock is a standard random normal with covariance matrix equal the transition error covariance
 
     % reconstruct latent vector with original size:
@@ -54,17 +53,11 @@ for h = 2:H+1
     % quarter. Yet, in each of the first 5 horizons there is a 
     % dynamic combination between previous forecasts and initial 
     % forecast based on last draw of the latent vector
-    if h==2
-        % update subset of elements with current forecast
-        %latentForecast(h,pick) = latentForecastRed(h,pick);
-        
+    if h==2       
         % update subset of elements with initial forecast
         latentForecast(h,pickAlt) = latentForecastInit(pickAlt);
     
-    elseif h==3
-        % update subset of elements with current forecast
-        %latentForecast(h,pick) = latentForecastRed(h,pick);
-        
+    elseif h==3        
         % update subset of elements with 1-horizon previous forecast
         pickPrev = [L-3, L+L*Q-3, (L+L*Q+1+AR-1):AR:(L+L*Q+AR*M)];   %[2,7,12,14,16,18] for 5 variables (1Q, 4M)
         latentForecast(h,pickPrev) = latentForecast(h-1,pickPrev-1); 
@@ -73,10 +66,7 @@ for h = 2:H+1
         pickAlt = [L-2:L, L+L*Q-2:L+L*Q];  % here not automatized for Q>1  %[3,4,5,8,9,10] for 5 variables (1Q, 4M)
         latentForecast(h,pickAlt) = latentForecastInit(pickAlt-2);
 
-    elseif h==4
-        % update subset of elements with current forecast
-        %latentForecast(h,pick) = latentForecastRed(h,pick);        
-        
+    elseif h==4      
         % update subset of elements with 1-horizon previous forecast
         pickPrev = [L-3, L+L*Q-3, (L+L*Q+1+AR-1):AR:(L+L*Q+AR*M)];  
         latentForecast(h,pickPrev) = latentForecast(h-1,pickPrev-1);
@@ -90,9 +80,6 @@ for h = 2:H+1
         latentForecast(h,pickAlt) = latentForecastInit(pickAlt-3);
 
     elseif h==5
-        % update subset of elements with current forecast
-        %latentForecast(h,pick) = latentForecastRed(h,pick);
-        
         % update subset of elements with 1-horizon previous forecast
         pickPrev = [L-3, L+L*Q-3, (L+L*Q+1+AR-1):AR:(L+L*Q+AR*M)];  %[2,7,12,14,16,18] for 5 variables (1Q, 4M)
         latentForecast(h,pickPrev) = latentForecast(h-1,pickPrev-1);
@@ -109,10 +96,7 @@ for h = 2:H+1
         pickAlt = [L, L+L*Q];  % here not automatized for Q>1  %[5,10]for 5 variables (1Q, 4M)
         latentForecast(h,pickAlt) = latentForecastInit(pickAlt-4);  
 
-    else
-        % update subset of elements with current forecast
-        %latentForecast(h,pick) = latentForecastRed(h,pick);
-        
+    else       
         % update subset of elements with 1-horizon previous forecast
         pickPrev = [L-3, L+L*Q-3, (L+L*Q+1+AR-1):AR:(L+L*Q+AR*M)];  %[2,7,12,14,16,18] for 5 variables (1Q, 4M)
         latentForecast(h,pickPrev) = latentForecast(h-1,pickPrev-1);

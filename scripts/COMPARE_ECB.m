@@ -64,9 +64,9 @@ saveas(gcf, fullfile(savepath,'Compare_ECB_VAR_forecast.png'));
 forecastStart = length(datesECB) - length(datesECBCompare(end-horizonECB:end));
 
 % delta -> difference between ECB (Mar24-MPE) and models forecast for horizons
-forecastDeltaECBvsDFM = dataECBCompare(forecastStart:end,1) - forecastQ(forecastStart:end);  % DFM
+forecastDeltaECBvsDFM = forecastQ(forecastStart:end) - dataECBCompare(forecastStart:end,1); % DFM
 [fECBvsDFM, xiECBvsDFM] = ksdensity(forecastDeltaECBvsDFM);
-forecastDeltaECBvsVAR = dataECBCompare(forecastStart:end,1) - forecastAltQ(forecastStart:end);  % VAR
+forecastDeltaECBvsVAR = forecastAltQ(forecastStart:end) - dataECBCompare(forecastStart:end,1);  % VAR
 [fECBvsVAR, xiECBvsVAR] = ksdensity(forecastDeltaECBvsVAR);
 
 figure;
