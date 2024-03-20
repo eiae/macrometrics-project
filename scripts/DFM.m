@@ -8,7 +8,7 @@
 yMean = nanmean(yDFM)';  % compute stats to add moments back after computing factor
 ySd = nanstd(yDFM)';  % avoid nan when computing stats
 %[yStandard,~,~] = standardMissObsOutl(yDFM);  % standardization accounting for missing obs and outliers
-[yStandard,~,~] = standardMissObs(yDFM);  % standardization accounting for missing obs and outliers
+[yStandard,~,~] = standardMissObs(yDFM);  % standardization accounting for missing obs 
 yModel = yStandard';
 
 % model specs

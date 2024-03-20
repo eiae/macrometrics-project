@@ -69,14 +69,14 @@ forecastDeltaECBvsDFM = forecastQ(forecastStart:end) - dataECBCompare(forecastSt
 forecastDeltaECBvsVAR = forecastAltQ(forecastStart:end) - dataECBCompare(forecastStart:end,1);  % VAR
 [fECBvsVAR, xiECBvsVAR] = ksdensity(forecastDeltaECBvsVAR);
 
-figure;
-plot(xiECBvsDFM,fECBvsDFM, Color=colorDFM, LineWidth=1.5);
-hold on
-plot(xiECBvsVAR,fECBvsVAR, Color=colorVAR, LineWidth=1.5);
-legend('DFM forecast difference density', 'VAR forecast difference density ', Location='northwest')
-sgt = sgtitle('Kernel density of forecast differences: ECB Mar23 MPE vs models', 'Interpreter','latex');
-sgt.FontSize = 12;
-saveas(gcf, fullfile(savepath,'Compare_ECB_DFM_VAR_errorKernel.png')); 
+% figure;
+% plot(xiECBvsDFM,fECBvsDFM, Color=colorDFM, LineWidth=1.5);
+% hold on
+% plot(xiECBvsVAR,fECBvsVAR, Color=colorVAR, LineWidth=1.5);
+% legend('DFM forecast difference density', 'VAR forecast difference density ', Location='northwest')
+% sgt = sgtitle('Kernel density of forecast differences: ECB Mar23 MPE vs models', 'Interpreter','latex');
+% sgt.FontSize = 12;
+% saveas(gcf, fullfile(savepath,'Compare_ECB_DFM_VAR_errorKernel.png')); 
 
 % correlation -> relation between ECB (Mar24-MPE) and DFM forecast for horizons
 forecastCorrECBvsDFM = corr(dataECBCompare(forecastStart:end,1), forecastQ(forecastStart:end));
