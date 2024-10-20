@@ -49,7 +49,7 @@ for h = 2:H+1
 
     % reconstruct latent vector with original size:
     % we have 5 cases due to the m2q mapping which contains the 
-    % current month + four lags of the months to reconstruc the 
+    % current month + four lags of the months to reconstruct the 
     % quarter. Yet, in each of the first 5 horizons there is a 
     % dynamic combination between previous forecasts and initial 
     % forecast based on last draw of the latent vector

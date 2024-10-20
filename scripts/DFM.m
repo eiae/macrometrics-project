@@ -1,6 +1,6 @@
 %% MF Bayesian DFM with unbalanced data
 
-% Disclaimer: code adapted from class which is based on routines written
+% Disclaimer: code adapted from routines written
 % by Gabriel Pérez-Quirós and Danilo Leiva-León
 
 
